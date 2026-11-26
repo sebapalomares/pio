@@ -1,0 +1,90 @@
+/*
+ * Tokens de diseño de Pío — generados a partir del «pio · Manual de identidad»
+ * (tokens.json, versión 1). No cambiar valores aquí sin cambiarlos en el manual.
+ *
+ * Tema claro por defecto. La cámara RA y el mapa nocturno usan data-tema="oscuro".
+ */
+
+/* ---------- Fuentes (autoalojadas, funcionan sin conexión) ---------- */
+@font-face { font-family: 'Outfit'; font-weight: 600; font-style: normal; font-display: swap; src: url('/fonts/outfit-600.woff2') format('woff2'); }
+@font-face { font-family: 'Outfit'; font-weight: 700; font-style: normal; font-display: swap; src: url('/fonts/outfit-700.woff2') format('woff2'); }
+@font-face { font-family: 'Outfit'; font-weight: 800; font-style: normal; font-display: swap; src: url('/fonts/outfit-800.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-weight: 400; font-style: normal; font-display: swap; src: url('/fonts/inter-400.woff2') format('woff2'); }
+@font-face { font-family: 'Inter'; font-weight: 600; font-style: normal; font-display: swap; src: url('/fonts/inter-600.woff2') format('woff2'); }
+
+:root {
+  /* ---------- Color · tema claro ---------- */
+  --azul-rio: #1B6E8A;
+  --azul-rio-hondo: #13506A;
+  --azul-rio-claro: #D6E8EF;
+  --amarillo-pico: #F2B705;
+  --verde-pino: #1F5C4A;
+  --verde-brote: #8CC63F;
+  --gris-pluma: #A9B1B8;
+  --borde-control: #8A949C;
+  --tinta: #22313A;
+  --tinta-suave: #4A5861;
+  --crema: #F6F4EE;
+  --superficie: #FFFFFF;
+  --linea: #E3E0D6;
+  --sobre-azul: #FFFFFF;
+  --aviso: #B3261E;
+  --foco: #1B6E8A;
+
+  /* ---------- Tipografía ---------- */
+  --fuente-display: 'Outfit', system-ui, sans-serif;
+  --fuente-texto: 'Inter', system-ui, sans-serif;
+
+  --display: 800 48px/52px var(--fuente-display);
+  --titulo-1: 700 32px/38px var(--fuente-display);
+  --titulo-2: 700 24px/30px var(--fuente-display);
+  --titulo-3: 600 18px/24px var(--fuente-display);
+  --cuerpo: 400 16px/24px var(--fuente-texto);
+  --cuerpo-fuerte: 600 16px/24px var(--fuente-texto);
+  --pequeno: 400 14px/20px var(--fuente-texto);
+  --etiqueta: 600 12px/16px var(--fuente-texto);
+  --espaciado-display: -0.02em;
+  --espaciado-titulo-1: -0.01em;
+  --espaciado-etiqueta: 0.04em;
+
+  /* ---------- Espacio (rejilla de 4 px) ---------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --zona-tactil: 48px;
+
+  /* ---------- Forma ---------- */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  /* ---------- Sombra (solo tarjetas sobre mapa o cámara) ---------- */
+  --shadow-tarjeta: 0 1px 2px rgba(34, 49, 58, 0.08), 0 4px 12px rgba(34, 49, 58, 0.06);
+
+  color-scheme: light;
+}
+
+/* ---------- Color · tema oscuro (cámara RA y mapa nocturno) ---------- */
+[data-tema='oscuro'] {
+  --azul-rio: #5FB3D1;
+  --azul-rio-hondo: #8CCBE1;
+  --azul-rio-claro: #17323D;
+  --verde-pino: #6FB59A;
+  --gris-pluma: #5E6A73;
+  --borde-control: #6E7C86;
+  --tinta: #F2F4F5;
+  --tinta-suave: #B9C6CE;
+  --crema: #111A20;
+  --superficie: #1A262D;
+  --linea: #2C3A42;
+  --sobre-azul: #0E1B21;
+  --aviso: #FF8A80;
+  --foco: #5FB3D1;
+
+  color-scheme: dark;
+}

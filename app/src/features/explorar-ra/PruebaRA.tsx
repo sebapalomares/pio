@@ -24,7 +24,7 @@ export default function PruebaRA() {
 
   const empezar = async () => {
     const ok = await pedirPermisoBrujula();
-    if (!ok) setAvisoBrujula('Sin permiso de brújula: las etiquetas no podrán orientarse.');
+    if (!ok) setAvisoBrujula('Sin permiso de brújula no podemos orientar los lugares. Actívalo en los ajustes del navegador.');
     setActivo(true);
   };
 
@@ -50,11 +50,20 @@ export default function PruebaRA() {
   if (!activo) {
     return (
       <main className="inicio">
-        <h1>Pío · Prueba de realidad aumentada</h1>
-        <p>
-          Esta pantalla comprueba si el móvil puede mostrar etiquetas de lugares sobre la cámara usando
-          GPS y brújula. Necesita permiso para la cámara, la ubicación y la orientación.
-        </p>
+        <img className="inicio-logo" src="/brand/pio-firma-horizontal.svg" alt="pio" />
+        <div className="inicio-cuerpo">
+          <span className="inicio-etiqueta">Prueba de realidad aumentada</span>
+          <h1>Mira a tu alrededor</h1>
+          <p>
+            Vamos a comprobar si tu móvil puede mostrar los lugares cercanos sobre la imagen de la cámara,
+            usando el GPS y la brújula.
+          </p>
+          <ul className="inicio-permisos">
+            <li>{icono('camara')}Cámara, para ver el entorno</li>
+            <li>{icono('gps')}Ubicación, para saber dónde estás</li>
+            <li>{icono('brujula')}Movimiento y orientación, para saber hacia dónde miras</li>
+          </ul>
+        </div>
         <button type="button" className="boton-principal" onClick={empezar}>
           Empezar la prueba
         </button>
@@ -63,7 +72,7 @@ export default function PruebaRA() {
   }
 
   return (
-    <main className="ra">
+    <main className="ra" data-tema="oscuro">
       <video ref={video} className="ra-video" playsInline muted autoPlay />
 
       <div className="ra-capa" aria-live="polite">
@@ -72,9 +81,12 @@ export default function PruebaRA() {
           const y = 30 + i * 9;
           return (
             <div key={p.id} className="etiqueta" style={{ left: `${x}%`, top: `${y}%` }}>
-              <strong>{p.nombre}</strong>
-              <span>
-                {formatearDistancia(p.d)} · {p.categoria}
+              <img src="/brand/pio-pin-azul.svg" alt="" />
+              <span className="etiqueta-texto">
+                <strong>{p.nombre}</strong>
+                <span>
+                  {formatearDistancia(p.d)} · {p.categoria}
+                </span>
               </span>
             </div>
           );
@@ -82,36 +94,56 @@ export default function PruebaRA() {
       </div>
 
       <div className="ra-barra">
-        <div className="segmentado" role="group" aria-label="Puntos a mostrar">
+        <img className="ra-logo" src="/brand/pio-logotipo-azul-claro.svg" alt="pio" />
+        <div className="segmentado" role="group" aria-label="Puntos que se muestran">
           <button type="button" aria-pressed={fuente === 'alrededor'} onClick={() => setFuente('alrededor')}>
-            Alrededor de mí
+            Alrededor
           </button>
           <button type="button" aria-pressed={fuente === 'cazorla'} onClick={() => setFuente('cazorla')}>
             Cazorla
           </button>
         </div>
-        <button type="button" className="boton-secundario" onClick={() => setVerDatos((v) => !v)}>
-          {verDatos ? 'Ocultar datos' : 'Ver datos'}
-        </button>
       </div>
 
-      {verDatos && (
-        <section className="ra-datos" aria-label="Datos de los sensores">
-          <div>
-            GPS:{' '}
-            {posicion
-              ? `${posicion.lat.toFixed(5)}, ${posicion.lng.toFixed(5)} (±${Math.round(posicion.precision)} m)`
-              : 'buscando señal…'}
-          </div>
-          <div>
-            Brújula: {orientacion !== null ? `${Math.round(orientacion)}°` : 'sin datos'} · {fuenteBrujula}
-          </div>
-          <div>Etiquetas visibles: {etiquetas.length}</div>
-          {errorGps && <div className="error">GPS: {errorGps}</div>}
-          {errorCamara && <div className="error">Cámara: {errorCamara}</div>}
-          {avisoBrujula && <div className="error">{avisoBrujula}</div>}
-        </section>
-      )}
+      <section className="ra-datos" aria-label="Datos de los sensores">
+        <div className="ra-datos-cabecera">
+          <strong>Sensores</strong>
+          <button type="button" className="boton-secundario" onClick={() => setVerDatos((v) => !v)}>
+            {verDatos ? 'Ocultar' : 'Mostrar'}
+          </button>
+        </div>
+        {verDatos && (
+          <>
+            <div>
+              GPS:{' '}
+              {posicion
+                ? `${posicion.lat.toFixed(5)}, ${posicion.lng.toFixed(5)} (±${Math.round(posicion.precision)} m)`
+                : 'buscando señal…'}
+            </div>
+            <div>
+              Brújula: {orientacion !== null ? `${Math.round(orientacion)}°` : 'sin datos'} · {fuenteBrujula}
+            </div>
+            <div>Lugares a la vista: {etiquetas.length}</div>
+            {errorGps && <div className="error">GPS: {errorGps}</div>}
+            {errorCamara && <div className="error">Cámara: {errorCamara}</div>}
+            {avisoBrujula && <div className="error">{avisoBrujula}</div>}
+          </>
+        )}
+      </section>
     </main>
+  );
+}
+
+/** Iconos de trazo 24 px, 2 px, del manual (sección 7). */
+function icono(nombre: 'camara' | 'gps' | 'brujula') {
+  const trazos = {
+    camara: <><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></>,
+    gps: <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" /><circle cx="12" cy="12" r="7" /></>,
+    brujula: <><circle cx="12" cy="12" r="9" /><path d="m15.5 8.5-2 5-5 2 2-5z" /></>,
+  };
+  return (
+    <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      {trazos[nombre]}
+    </svg>
   );
 }
