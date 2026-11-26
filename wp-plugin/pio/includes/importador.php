@@ -22,6 +22,10 @@ function pio_url_importador(): string {
 add_action(
 	'admin_menu',
 	function () {
+		// Con los puntos de Toolset de la web no hace falta (ni conviene) importar la demo (D19).
+		if ( pio_usa_tipo_externo() ) {
+			return;
+		}
 		add_submenu_page(
 			'edit.php?post_type=pio_punto',
 			__( 'Importar puntos de demostración', 'pio' ),
@@ -82,7 +86,7 @@ function pio_importar_demo( array $datos ): array {
 
 		$id = wp_insert_post(
 			array(
-				'post_type'    => 'pio_punto',
+				'post_type'    => pio_tipo_punto(),
 				'post_status'  => 'draft',
 				'post_title'   => $p['nombre'],
 				'post_content' => $p['descripcion'] ?? '',

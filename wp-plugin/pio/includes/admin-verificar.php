@@ -11,14 +11,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 const PIO_PAGINA_VERIFICAR = 'pio-verificar';
 
 function pio_url_verificar(): string {
-	return admin_url( 'edit.php?post_type=pio_punto&page=' . PIO_PAGINA_VERIFICAR );
+	return admin_url( 'edit.php?post_type=' . pio_tipo_punto() . '&page=' . PIO_PAGINA_VERIFICAR );
 }
 
 add_action(
 	'admin_menu',
 	function () {
 		$hook = add_submenu_page(
-			'edit.php?post_type=pio_punto',
+			'edit.php?post_type=' . pio_tipo_punto(),
 			__( 'Verificar puntos en el mapa', 'pio' ),
 			__( 'Verificar en el mapa', 'pio' ),
 			PIO_CAP_VERIFICAR,
@@ -76,8 +76,8 @@ function pio_cargar_recursos_verificar(): void {
 		array(
 			'api'          => esc_url_raw( rest_url( PIO_NS . '/verificacion/puntos' ) ),
 			'nonce'        => wp_create_nonce( 'wp_rest' ),
-			'importarUrl'  => current_user_can( 'manage_options' ) ? pio_url_importador() : '',
-			'nuevoUrl'     => admin_url( 'post-new.php?post_type=pio_punto' ),
+			'importarUrl'  => current_user_can( 'manage_options' ) && ! pio_usa_tipo_externo() ? pio_url_importador() : '',
+			'nuevoUrl'     => admin_url( 'post-new.php?post_type=' . pio_tipo_punto() ),
 			'centro'       => array( 37.9105, -3.0015 ), // Casco de Cazorla, por si aún no hay puntos.
 			'textos'       => pio_textos_verificar(),
 		)
@@ -110,6 +110,7 @@ function pio_textos_verificar(): array {
 		'invalidada'        => __( 'Las coordenadas cambiaron después de la verificación del %1$s (%2$s).', 'pio' ),
 		'pistaArrastrar'    => __( 'Arrastra el pin hasta el sitio exacto y pulsa «Guardar y verificar». Si ya está bien, púlsalo sin moverlo.', 'pio' ),
 		'pistaSinCoords'    => __( 'Este punto no tenía coordenadas: lo hemos puesto en el centro del mapa. Arrástralo a su sitio.', 'pio' ),
+		'pistaDireccion'    => __( 'La ubicación de este punto es una dirección en texto: el pin está donde la sitúa el mapa de la web, que puede no ser exacto. Al verificarlo se guardan sus coordenadas.', 'pio' ),
 		/* translators: %s: metros */
 		'movido'            => __( 'Has movido el pin %s m.', 'pio' ),
 		'deshacer'          => __( 'Deshacer', 'pio' ),
@@ -159,7 +160,7 @@ function pio_pintar_pagina_verificar(): void {
 
 		<div class="pio-v-barra">
 			<div class="pio-v-fila">
-				<a class="pio-v-pastilla pio-v-logo" href="<?php echo esc_url( admin_url( 'edit.php?post_type=pio_punto' ) ); ?>" title="<?php esc_attr_e( 'Volver a los puntos de interés', 'pio' ); ?>">
+				<a class="pio-v-pastilla pio-v-logo" href="<?php echo esc_url( admin_url( 'edit.php?post_type=' . pio_tipo_punto() ) ); ?>" title="<?php esc_attr_e( 'Volver a los puntos de interés', 'pio' ); ?>">
 					<img class="pio-v-logo-claro" src="<?php echo esc_url( $marca . 'pio-logotipo-azul.svg' ); ?>" alt="pio" width="38" height="27">
 					<img class="pio-v-logo-oscuro" src="<?php echo esc_url( $marca . 'pio-logotipo-azul-claro.svg' ); ?>" alt="" width="38" height="27">
 					<span class="pio-v-logo-texto"><?php esc_html_e( 'Verificar', 'pio' ); ?></span>

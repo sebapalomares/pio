@@ -26,7 +26,14 @@ function pio_campos_punto(): array {
 	);
 }
 
-function pio_registrar_tipos(): void {
+/**
+ * Tipo propio de puntos: solo si la web no tiene ya los suyos (D19). Va tarde en `init`
+ * para que Toolset haya registrado antes sus tipos.
+ */
+function pio_registrar_tipo_punto(): void {
+	if ( pio_usa_tipo_externo() ) {
+		return;
+	}
 	register_post_type(
 		'pio_punto',
 		array(
@@ -45,23 +52,6 @@ function pio_registrar_tipos(): void {
 			// «Gestor de puntos» edite solo los suyos sin tocar las entradas del blog. Ver roles.php.
 			'capability_type' => array( 'pio_punto', 'pio_puntos' ),
 			'map_meta_cap'    => true,
-		)
-	);
-
-	register_post_type(
-		'pio_ruta',
-		array(
-			'labels'       => array(
-				'name'          => 'Rutas',
-				'singular_name' => 'Ruta',
-				'add_new_item'  => 'Añadir ruta',
-				'edit_item'     => 'Editar ruta',
-			),
-			'public'       => true,
-			'show_in_rest' => true,
-			'menu_icon'    => 'dashicons-flag',
-			'supports'     => array( 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields' ),
-			'rewrite'      => array( 'slug' => 'ruta' ),
 		)
 	);
 
@@ -98,6 +88,27 @@ function pio_registrar_tipos(): void {
 			)
 		);
 	}
+}
+add_action( 'init', 'pio_registrar_tipo_punto', 100 );
+
+/** Rutas: siempre propias de Pío. Sus paradas son IDs de puntos del tipo que toque. */
+function pio_registrar_tipos(): void {
+	register_post_type(
+		'pio_ruta',
+		array(
+			'labels'       => array(
+				'name'          => 'Rutas',
+				'singular_name' => 'Ruta',
+				'add_new_item'  => 'Añadir ruta',
+				'edit_item'     => 'Editar ruta',
+			),
+			'public'       => true,
+			'show_in_rest' => true,
+			'menu_icon'    => 'dashicons-flag',
+			'supports'     => array( 'title', 'editor', 'thumbnail', 'excerpt', 'custom-fields' ),
+			'rewrite'      => array( 'slug' => 'ruta' ),
+		)
+	);
 
 	// Paradas de la ruta: lista ordenada de IDs de puntos.
 	register_post_meta(
@@ -127,11 +138,9 @@ add_action( 'init', 'pio_registrar_tipos' );
 
 /** Cada punto recibe un código QR aleatorio e irrepetible al guardarse por primera vez. */
 function pio_asignar_qr( int $post_id, WP_Post $post ): void {
-	if ( 'pio_punto' !== $post->post_type || wp_is_post_revision( $post_id ) ) {
+	if ( pio_tipo_punto() !== $post->post_type || wp_is_post_revision( $post_id ) ) {
 		return;
 	}
-	if ( ! get_post_meta( $post_id, 'qr_codigo', true ) ) {
-		update_post_meta( $post_id, 'qr_codigo', wp_generate_password( 12, false, false ) );
-	}
+	pio_asignar_qr_si_falta( $post_id );
 }
 add_action( 'save_post', 'pio_asignar_qr', 10, 2 );

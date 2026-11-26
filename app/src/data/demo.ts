@@ -27,6 +27,10 @@ export interface Punto extends Coordenadas {
   audio_url: string | null;
   num_fotos: number;
   qr_codigo: string;
+  /** Solo en /puntos/{id}: dirección legible (en turismocazorla.info, el campo «detalles-direccion» de Toolset). */
+  direccion?: string | null;
+  /** Solo en /puntos/{id}: ficha del punto en la web. */
+  enlace?: string;
   /** true si las coordenadas están confirmadas en la pantalla «Verificar en el mapa» del plugin (D18). */
   verificado: boolean;
 }

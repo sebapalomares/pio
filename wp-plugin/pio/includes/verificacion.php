@@ -6,9 +6,11 @@
  * pantalla «Verificar en el mapa». Se guarda una instantánea en la meta protegida
  * `_pio_verificacion`: lat, lng, quién, cuándo, cómo (mapa, GPS o terreno) y la precisión del GPS.
  *
- * Regla: el punto solo cuenta como verificado si sus `lat`/`lng` actuales coinciden con los de
- * la instantánea. Si alguien cambia las coordenadas por cualquier vía (editor, API, importación),
+ * Regla: el punto solo cuenta como verificado si sus coordenadas actuales coinciden con las de
+ * la instantánea. Si alguien las cambia por cualquier vía (editor, Toolset, API, importación),
  * deja de estar verificado y la instantánea pasa a `_pio_verificacion_anterior`.
+ *
+ * Las coordenadas se leen y guardan con origen.php (Toolset `wpcf-ubicacion` o metas lat/lng).
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -17,26 +19,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 const PIO_META_VERIFICACION          = '_pio_verificacion';
 const PIO_META_VERIFICACION_ANTERIOR = '_pio_verificacion_anterior';
-
-/** Decimales con los que se guardan las coordenadas (7 ≈ 1 cm). */
-const PIO_DECIMALES_COORD = 7;
-
-function pio_redondear_coord( $valor ): ?float {
-	if ( '' === $valor || null === $valor || ! is_numeric( $valor ) ) {
-		return null;
-	}
-	return round( (float) $valor, PIO_DECIMALES_COORD );
-}
-
-/** Coordenadas actuales del punto, o null si le falta alguna. */
-function pio_coords_punto( int $id ): ?array {
-	$lat = pio_redondear_coord( get_post_meta( $id, 'lat', true ) );
-	$lng = pio_redondear_coord( get_post_meta( $id, 'lng', true ) );
-	if ( null === $lat || null === $lng ) {
-		return null;
-	}
-	return array( 'lat' => $lat, 'lng' => $lng );
-}
 
 function pio_misma_coord( float $a, float $b ): bool {
 	return abs( $a - $b ) < 0.5 / ( 10 ** PIO_DECIMALES_COORD );
@@ -68,9 +50,8 @@ function pio_verificar_punto( int $id, float $lat, float $lng, string $metodo, ?
 	$lat = round( $lat, PIO_DECIMALES_COORD );
 	$lng = round( $lng, PIO_DECIMALES_COORD );
 
-	// Primero las coordenadas (esto invalida la verificación anterior, si la había)…
-	update_post_meta( $id, 'lat', $lat );
-	update_post_meta( $id, 'lng', $lng );
+	// Primero las coordenadas…
+	pio_guardar_coords( $id, $lat, $lng );
 
 	// …y después la instantánea nueva.
 	$usuario = wp_get_current_user();
@@ -101,15 +82,41 @@ function pio_revisar_verificacion( int $id ): void {
 	delete_post_meta( $id, PIO_META_VERIFICACION );
 }
 
-/** Vigila cualquier cambio de lat/lng en un punto, venga de donde venga. */
+/**
+ * Vigila cualquier cambio de las coordenadas de un punto, venga de donde venga.
+ * La comprobación se hace al final de la petición: Toolset a veces borra y vuelve a crear
+ * el campo al guardar, y entre medias el punto parecería «sin coordenadas».
+ */
 function pio_al_cambiar_meta( $meta_id, $post_id, $clave ): void {
-	if ( in_array( $clave, array( 'lat', 'lng' ), true ) && 'pio_punto' === get_post_type( $post_id ) ) {
-		pio_revisar_verificacion( (int) $post_id );
+	if ( in_array( $clave, pio_claves_coords(), true ) && pio_es_punto( (int) $post_id ) ) {
+		pio_revisar_al_terminar( (int) $post_id );
 	}
 }
 add_action( 'added_post_meta', 'pio_al_cambiar_meta', 10, 3 );
 add_action( 'updated_post_meta', 'pio_al_cambiar_meta', 10, 3 );
 add_action( 'deleted_post_meta', 'pio_al_cambiar_meta', 10, 3 );
+
+function pio_revisar_al_terminar( ?int $id = null ): array {
+	static $pendientes = array();
+	if ( null !== $id ) {
+		if ( ! $pendientes ) {
+			add_action( 'shutdown', 'pio_revisar_pendientes', 0 );
+		}
+		$pendientes[ $id ] = true;
+		return $pendientes;
+	}
+	$lista      = array_keys( $pendientes );
+	$pendientes = array();
+	return $lista;
+}
+
+/** Revisa los puntos cuyas coordenadas han cambiado en esta petición. */
+function pio_revisar_pendientes(): void {
+	foreach ( pio_revisar_al_terminar() as $id ) {
+		wp_cache_delete( $id, 'post_meta' );
+		pio_revisar_verificacion( $id );
+	}
+}
 
 /** Fecha guardada (GMT «Y-m-d H:i:s» o solo «Y-m-d») en texto local. */
 function pio_fecha_texto( ?string $fecha ): ?string {
@@ -160,12 +167,14 @@ function pio_punto_para_verificar( WP_Post $p ): array {
 	$cat    = pio_categoria_de( $p->ID );
 	return array(
 		'id'          => $p->ID,
-		'nombre'      => get_the_title( $p ) ?: __( '(sin nombre)', 'pio' ),
+		'nombre'      => html_entity_decode( get_the_title( $p ), ENT_QUOTES, 'UTF-8' ) ?: __( '(sin nombre)', 'pio' ),
 		'estado'      => $p->post_status,
 		'categoria'   => $cat ? array( 'slug' => $cat['slug'], 'nombre' => $cat['nombre'] ) : null,
 		'lat'         => $coords['lat'] ?? null,
 		'lng'         => $coords['lng'] ?? null,
 		'verificado'  => pio_esta_verificado( $p->ID ),
+		// true si la ubicación es una dirección en texto: sus coordenadas son las que calculó Toolset Maps.
+		'aproximada'  => pio_ubicacion_es_direccion( $p->ID ),
 		'verificacion' => pio_verificacion_publica( pio_verificacion_de( $p->ID ) ),
 		'anterior'    => pio_verificacion_publica( get_post_meta( $p->ID, PIO_META_VERIFICACION_ANTERIOR, true ) ?: null ),
 		'editar_url'  => get_edit_post_link( $p->ID, 'raw' ),
@@ -190,7 +199,7 @@ add_action(
 			array(
 				'methods'             => 'POST',
 				'callback'            => 'pio_api_verificacion_guardar',
-				'permission_callback' => fn( WP_REST_Request $req ) => pio_puede_verificar() && current_user_can( 'edit_post', (int) $req['id'] ),
+				'permission_callback' => fn( WP_REST_Request $req ) => pio_puede_verificar_punto( (int) $req['id'] ),
 				'args'                => array(
 					'lat'       => array(
 						'type'     => 'number',
@@ -221,7 +230,7 @@ add_action(
 
 function pio_api_verificacion_lista(): WP_REST_Response {
 	$args = array(
-		'post_type'      => 'pio_punto',
+		'post_type'      => pio_tipo_punto(),
 		'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
 		'posts_per_page' => 2000,
 		'orderby'        => 'title',
@@ -229,32 +238,39 @@ function pio_api_verificacion_lista(): WP_REST_Response {
 		'no_found_rows'  => true,
 	);
 	// El gestor solo ve sus puntos.
-	if ( ! current_user_can( 'edit_others_pio_puntos' ) ) {
+	if ( ! pio_ve_todos_los_puntos() ) {
 		$args['author'] = get_current_user_id();
 	}
 	$puntos = array_values(
 		array_filter(
 			get_posts( $args ),
-			fn( $p ) => current_user_can( 'edit_post', $p->ID )
+			fn( $p ) => pio_puede_verificar_punto( $p->ID )
 		)
 	);
 
-	$categorias = get_terms( array( 'taxonomy' => 'pio_categoria', 'hide_empty' => false ) );
-	if ( is_wp_error( $categorias ) ) {
-		$categorias = array();
+	// Solo las categorías que usan estos puntos (en Toolset son las del blog, que son muchas más).
+	$categorias = array();
+	if ( $puntos ) {
+		$terminos = wp_get_object_terms( wp_list_pluck( $puntos, 'ID' ), pio_taxonomia_categoria() );
+		if ( ! is_wp_error( $terminos ) ) {
+			foreach ( $terminos as $t ) {
+				$categorias[ $t->slug ] = array( 'slug' => $t->slug, 'nombre' => html_entity_decode( $t->name, ENT_QUOTES, 'UTF-8' ) );
+			}
+		}
+		usort( $categorias, fn( $a, $b ) => strcoll( $a['nombre'], $b['nombre'] ) );
 	}
 
 	return rest_ensure_response(
 		array(
 			'puntos'     => array_map( 'pio_punto_para_verificar', $puntos ),
-			'categorias' => array_map( fn( $t ) => array( 'slug' => $t->slug, 'nombre' => $t->name ), $categorias ),
+			'categorias' => array_values( $categorias ),
 		)
 	);
 }
 
 function pio_api_verificacion_guardar( WP_REST_Request $req ) {
 	$p = get_post( (int) $req['id'] );
-	if ( ! $p || 'pio_punto' !== $p->post_type ) {
+	if ( ! $p || ! pio_es_punto( $p ) ) {
 		return new WP_Error( 'pio_no_encontrado', __( 'Punto no encontrado', 'pio' ), array( 'status' => 404 ) );
 	}
 	$metodo    = 'gps' === $req['metodo'] ? 'gps' : 'mapa';
@@ -269,33 +285,35 @@ function pio_api_verificacion_guardar( WP_REST_Request $req ) {
  * Columna «Ubicación» en el listado de puntos.
  * ---------------------------------------------------------------------- */
 
-add_filter(
-	'manage_pio_punto_posts_columns',
-	function ( array $columnas ): array {
-		$columnas['pio_verificado'] = __( 'Ubicación', 'pio' );
-		return $columnas;
+add_action(
+	'admin_init',
+	function () {
+		$tipo = pio_tipo_punto();
+		add_filter(
+			"manage_{$tipo}_posts_columns",
+			function ( array $columnas ): array {
+				$columnas['pio_verificado'] = __( 'Ubicación (Pío)', 'pio' );
+				return $columnas;
+			}
+		);
+		add_action( "manage_{$tipo}_posts_custom_column", 'pio_pintar_columna_ubicacion', 10, 2 );
 	}
 );
 
-add_action(
-	'manage_pio_punto_posts_custom_column',
-	function ( string $columna, int $id ): void {
-		if ( 'pio_verificado' !== $columna ) {
-			return;
-		}
-		if ( pio_esta_verificado( $id ) ) {
-			$v = pio_verificacion_publica( pio_verificacion_de( $id ) );
-			printf(
-				'<span style="color:#1B6E8A;font-weight:600">%1$s</span><br><small>%2$s</small>',
-				esc_html__( '✓ Verificada', 'pio' ),
-				esc_html( trim( $v['por'] . ' · ' . $v['fecha_texto'], ' ·' ) )
-			);
-		} elseif ( ! pio_coords_punto( $id ) ) {
-			echo '<span style="color:#B3261E">' . esc_html__( 'Sin coordenadas', 'pio' ) . '</span>';
-		} else {
-			echo '<span style="color:#B3261E">' . esc_html__( 'Sin verificar', 'pio' ) . '</span>';
-		}
-	},
-	10,
-	2
-);
+function pio_pintar_columna_ubicacion( string $columna, int $id ): void {
+	if ( 'pio_verificado' !== $columna ) {
+		return;
+	}
+	if ( pio_esta_verificado( $id ) ) {
+		$v = pio_verificacion_publica( pio_verificacion_de( $id ) );
+		printf(
+			'<span style="color:#1B6E8A;font-weight:600">%1$s</span><br><small>%2$s</small>',
+			esc_html__( '✓ Verificada', 'pio' ),
+			esc_html( trim( $v['por'] . ' · ' . $v['fecha_texto'], ' ·' ) )
+		);
+	} elseif ( ! pio_coords_punto( $id ) ) {
+		echo '<span style="color:#B3261E">' . esc_html__( 'Sin coordenadas', 'pio' ) . '</span>';
+	} else {
+		echo '<span style="color:#B3261E">' . esc_html__( 'Sin verificar', 'pio' ) . '</span>';
+	}
+}

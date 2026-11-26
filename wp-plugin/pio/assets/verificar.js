@@ -482,7 +482,9 @@
 			}
 		}
 
-		$('pio-v-ficha-pista').textContent = estado.original ? T.pistaArrastrar : T.pistaSinCoords;
+		$('pio-v-ficha-pista').textContent = !estado.original
+			? T.pistaSinCoords
+			: p.aproximada && !p.verificado ? T.pistaDireccion + ' ' + T.pistaArrastrar : T.pistaArrastrar;
 
 		var movido = $('pio-v-ficha-movido');
 		movido.textContent = '';
