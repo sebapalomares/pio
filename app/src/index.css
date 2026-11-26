@@ -1,0 +1,108 @@
+:root {
+  --bosque: #12302a;
+  --bosque-oscuro: #0f2420;
+  --verde: #2f6b5e;
+  --ambar: #f2a33a;
+  --fondo: #f4f6f3;
+  --texto-suave: #c9d8d3;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  color: #12302a;
+  background: var(--fondo);
+}
+
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; height: 100%; }
+button { font: inherit; cursor: pointer; }
+
+.inicio {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px 24px;
+  background: var(--bosque);
+  color: #fff;
+}
+.inicio h1 { margin: 0; font-size: 28px; line-height: 1.2; }
+.inicio p { margin: 0; color: var(--texto-suave); line-height: 1.5; }
+
+.boton-principal {
+  min-height: 52px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--ambar);
+  color: var(--bosque);
+  font-weight: 800;
+  font-size: 16px;
+}
+.boton-secundario {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(15, 36, 32, 0.8);
+  color: #fff;
+  font-weight: 600;
+}
+
+.ra { position: fixed; inset: 0; background: #000; overflow: hidden; color: #fff; }
+.ra-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.ra-capa { position: absolute; inset: 0; pointer-events: none; }
+
+.etiqueta {
+  position: absolute;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 14px;
+  background: rgba(15, 36, 32, 0.85);
+  border: 2px solid var(--ambar);
+  white-space: nowrap;
+  transition: left 0.15s linear;
+}
+.etiqueta strong { font-size: 14px; }
+.etiqueta span { font-size: 12px; color: var(--texto-suave); }
+
+.ra-barra {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  left: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+.segmentado {
+  display: flex;
+  padding: 4px;
+  border-radius: 16px;
+  background: var(--bosque-oscuro);
+}
+.segmentado button {
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+}
+.segmentado button[aria-pressed='true'] { background: var(--ambar); color: var(--bosque); }
+
+.ra-datos {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: max(16px, env(safe-area-inset-bottom));
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(15, 36, 32, 0.9);
+  font-size: 13px;
+  line-height: 1.6;
+  font-variant-numeric: tabular-nums;
+}
+.ra-datos .error { color: #ffb4a8; }
