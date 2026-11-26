@@ -10,6 +10,8 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ index.html [L]
 
 # El service worker no debe quedarse en caché del navegador
-<Files "sw.js">
-  Header set Cache-Control "no-cache"
-</Files>
+<IfModule mod_headers.c>
+  <Files "sw.js">
+    Header set Cache-Control "no-cache"
+  </Files>
+</IfModule>
