@@ -149,3 +149,58 @@ button { font: inherit; cursor: pointer; }
 .ra-datos-cabecera strong { font: var(--titulo-3); }
 .ra-datos .boton-secundario { min-height: 40px; padding: 0 var(--space-3); font: var(--etiqueta); font-size: 13px; }
 .ra-datos .error { color: var(--aviso); }
+
+/* ---------- Horizonte y radar de la prueba ---------- */
+.ra-horizonte {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 1px dashed var(--azul-rio);
+  opacity: 0.6;
+}
+.ra-radar {
+  position: absolute;
+  top: calc(max(var(--space-4), env(safe-area-inset-top)) + 64px);
+  right: var(--space-3);
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--superficie);
+  box-shadow: var(--shadow-tarjeta);
+  overflow: hidden;
+}
+.ra-radar-cono {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from calc(var(--campo) / -2), var(--azul-rio-claro) 0 var(--campo), transparent var(--campo));
+}
+.ra-radar-norte {
+  position: absolute;
+  left: calc(50% - 6px);
+  top: calc(50% - 8px);
+  width: 12px;
+  text-align: center;
+  font: var(--etiqueta);
+  color: var(--tinta-suave);
+}
+.ra-radar-punto {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gris-pluma);
+}
+.ra-radar-punto.en-vista { background: var(--amarillo-pico); }
+.ra-radar-yo {
+  position: absolute;
+  left: calc(50% - 4px);
+  top: calc(50% - 4px);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tinta);
+}
+.ra-campo { display: flex; flex-direction: column; gap: var(--space-1); padding-top: var(--space-2); }
+.ra-campo input { width: 100%; accent-color: var(--azul-rio); min-height: 32px; }

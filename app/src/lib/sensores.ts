@@ -54,11 +54,27 @@ export async function pedirPermisoBrujula(): Promise<boolean> {
  */
 export function useBrujula(activo: boolean, suavizado = 0.2) {
   const [rumbo, setRumbo] = useState<number | null>(null);
+  const [inclinacion, setInclinacion] = useState<number | null>(null);
   const [fuente, setFuente] = useState<string>('—');
   const ultimo = useRef<number | null>(null);
+  const ultimaInclinacion = useRef<number | null>(null);
 
   useEffect(() => {
     if (!activo) return;
+
+    /**
+     * Inclinación de la cámara respecto al horizonte, en grados:
+     * 0 = móvil vertical mirando al frente, positivo = mirando hacia arriba.
+     * Sale de beta (90° con el móvil vertical en retrato).
+     */
+    const aplicarInclinacion = (beta: number | null) => {
+      if (beta === null) return;
+      const valor = Math.max(-90, Math.min(90, beta - 90));
+      const previo = ultimaInclinacion.current;
+      const nuevo = previo === null ? valor : previo + (valor - previo) * suavizado;
+      ultimaInclinacion.current = nuevo;
+      setInclinacion(nuevo);
+    };
 
     const aplicar = (valor: number) => {
       const previo = ultimo.current;
@@ -78,6 +94,7 @@ export function useBrujula(activo: boolean, suavizado = 0.2) {
         setFuente('iOS webkitCompassHeading');
         aplicar(ev.webkitCompassHeading);
       }
+      aplicarInclinacion(ev.beta);
     };
     const manejarAbsoluto = (e: Event) => {
       const ev = e as DeviceOrientationEvent;
@@ -85,6 +102,7 @@ export function useBrujula(activo: boolean, suavizado = 0.2) {
         setFuente('Android deviceorientationabsolute');
         aplicar((360 - ev.alpha) % 360);
       }
+      aplicarInclinacion(ev.beta);
     };
 
     const tieneAbsoluto = 'ondeviceorientationabsolute' in window;
@@ -97,7 +115,7 @@ export function useBrujula(activo: boolean, suavizado = 0.2) {
     };
   }, [activo, suavizado]);
 
-  return { rumbo, fuente };
+  return { rumbo, inclinacion, fuente };
 }
 
 /** Cámara trasera en un <video>. */

@@ -3,8 +3,9 @@ import { anguloRelativo, distancia, formatearDistancia, rumbo } from '../../lib/
 import { pedirPermisoBrujula, useBrujula, useCamara, usePosicion } from '../../lib/sensores';
 import { PUNTOS_CAZORLA, puntosAlrededor } from '../../data/puntos-prueba';
 
-// Campo de visión horizontal aproximado de la cámara trasera en vertical.
-const CAMPO_VISION = 60;
+// Campo de visión horizontal inicial de la cámara trasera en vertical (ajustable en el panel).
+const CAMPO_VISION_INICIAL = 50;
+const RADAR = 96; // diámetro del radar en px
 
 type Fuente = 'alrededor' | 'cazorla';
 
@@ -17,9 +18,10 @@ export default function PruebaRA() {
   const [avisoBrujula, setAvisoBrujula] = useState<string | null>(null);
   const [fuente, setFuente] = useState<Fuente>('alrededor');
   const [verDatos, setVerDatos] = useState(true);
+  const [campo, setCampo] = useState(CAMPO_VISION_INICIAL);
 
   const { posicion, error: errorGps } = usePosicion(activo);
-  const { rumbo: orientacion, fuente: fuenteBrujula } = useBrujula(activo);
+  const { rumbo: orientacion, inclinacion, fuente: fuenteBrujula } = useBrujula(activo);
   const { video, error: errorCamara } = useCamara(activo);
 
   const empezar = async () => {
@@ -32,20 +34,29 @@ export default function PruebaRA() {
   const [origenDemo, setOrigenDemo] = useState<{ lat: number; lng: number } | null>(null);
   if (posicion && !origenDemo) setOrigenDemo({ lat: posicion.lat, lng: posicion.lng });
 
-  const etiquetas = useMemo(() => {
+  // Todos los puntos con distancia y ángulo respecto a donde miras (para el radar)
+  const puntos = useMemo(() => {
     if (!posicion || orientacion === null) return [];
-    const puntos =
-      fuente === 'cazorla' ? PUNTOS_CAZORLA : origenDemo ? puntosAlrededor(origenDemo) : [];
-    return puntos
-      .map((p) => {
-        const d = distancia(posicion, p);
-        const r = rumbo(posicion, p);
-        const rel = anguloRelativo(r, orientacion);
-        return { ...p, d, r, rel };
-      })
-      .filter((p) => Math.abs(p.rel) <= CAMPO_VISION / 2 + 5)
-      .sort((a, b) => b.d - a.d);
+    const lista = fuente === 'cazorla' ? PUNTOS_CAZORLA : origenDemo ? puntosAlrededor(origenDemo) : [];
+    return lista.map((p) => {
+      const d = distancia(posicion, p);
+      const r = rumbo(posicion, p);
+      return { ...p, d, r, rel: anguloRelativo(r, orientacion) };
+    });
   }, [posicion, orientacion, fuente, origenDemo]);
+
+  // Los que caen dentro del campo de visión de la cámara, del más lejano al más cercano
+  const etiquetas = useMemo(
+    () => puntos.filter((p) => Math.abs(p.rel) <= campo / 2 + 5).sort((a, b) => b.d - a.d),
+    [puntos, campo],
+  );
+
+  // Campo de visión vertical a partir del horizontal y de la forma de la pantalla
+  const campoVertical =
+    (2 * Math.atan(Math.tan(((campo / 2) * Math.PI) / 180) * (window.innerHeight / window.innerWidth)) * 180) / Math.PI;
+  // Altura del horizonte en pantalla (%): sube y baja al inclinar el móvil
+  const horizonte = 50 + ((inclinacion ?? 0) / (campoVertical / 2)) * 50;
+  const alcanceRadar = Math.max(200, ...puntos.map((p) => p.d)) * 1.15;
 
   if (!activo) {
     return (
@@ -76,11 +87,13 @@ export default function PruebaRA() {
       <video ref={video} className="ra-video" playsInline muted autoPlay />
 
       <div className="ra-capa" aria-live="polite">
+        <div className="ra-horizonte" style={{ top: `${horizonte}%` }} />
         {etiquetas.map((p, i) => {
-          const x = 50 + (p.rel / (CAMPO_VISION / 2)) * 50;
-          const y = 30 + i * 9;
+          const x = 50 + (p.rel / (campo / 2)) * 50;
+          // Etiquetas sobre el horizonte; si hay varias, se apilan hacia arriba
+          const y = `calc(${horizonte}% - ${64 + i * 60}px)`;
           return (
-            <div key={p.id} className="etiqueta" style={{ left: `${x}%`, top: `${y}%` }}>
+            <div key={p.id} className="etiqueta" style={{ left: `${x}%`, top: y }}>
               <img src="/brand/pio-pin-azul.svg" alt="" />
               <span className="etiqueta-texto">
                 <strong>{p.nombre}</strong>
@@ -105,6 +118,30 @@ export default function PruebaRA() {
         </div>
       </div>
 
+      <div className="ra-radar" role="img" aria-label={`Radar: ${puntos.length} lugares alrededor`}>
+        <div className="ra-radar-cono" style={{ ['--campo' as string]: `${campo}deg` }} />
+        {orientacion !== null && (
+          <span
+            className="ra-radar-norte"
+            style={{ transform: `rotate(${-orientacion}deg) translateY(${-RADAR / 2 + 10}px) rotate(${orientacion}deg)` }}
+          >
+            N
+          </span>
+        )}
+        {puntos.map((p) => {
+          const radio = (Math.min(p.d, alcanceRadar) / alcanceRadar) * (RADAR / 2 - 8);
+          const a = (p.rel * Math.PI) / 180;
+          return (
+            <span
+              key={p.id}
+              className={Math.abs(p.rel) <= campo / 2 ? 'ra-radar-punto en-vista' : 'ra-radar-punto'}
+              style={{ left: RADAR / 2 + Math.sin(a) * radio - 4, top: RADAR / 2 - Math.cos(a) * radio - 4 }}
+            />
+          );
+        })}
+        <span className="ra-radar-yo" />
+      </div>
+
       <section className="ra-datos" aria-label="Datos de los sensores">
         <div className="ra-datos-cabecera">
           <strong>Sensores</strong>
@@ -123,7 +160,12 @@ export default function PruebaRA() {
             <div>
               Brújula: {orientacion !== null ? `${Math.round(orientacion)}°` : 'sin datos'} · {fuenteBrujula}
             </div>
-            <div>Lugares a la vista: {etiquetas.length}</div>
+            <div>Inclinación: {inclinacion !== null ? `${Math.round(inclinacion)}°` : 'sin datos'}</div>
+            <div>Lugares a la vista: {etiquetas.length} de {puntos.length}</div>
+            <label className="ra-campo">
+              Campo de visión: {campo}°
+              <input type="range" min={30} max={80} step={1} value={campo} onChange={(e) => setCampo(Number(e.target.value))} />
+            </label>
             {errorGps && <div className="error">GPS: {errorGps}</div>}
             {errorCamara && <div className="error">Cámara: {errorCamara}</div>}
             {avisoBrujula && <div className="error">{avisoBrujula}</div>}
