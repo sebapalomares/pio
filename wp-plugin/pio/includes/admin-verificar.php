@@ -93,7 +93,7 @@ function pio_textos_verificar(): array {
 		'errorCarga'        => __( 'No se han podido cargar los puntos. Revisa la conexión y vuelve a intentarlo.', 'pio' ),
 		'reintentar'        => __( 'Reintentar', 'pio' ),
 		'sinPuntos'         => __( 'Todavía no hay puntos de interés.', 'pio' ),
-		'importarDemo'      => __( 'Importar los puntos de demostración', 'pio' ),
+		'importarDemo'      => __( 'Importar los puntos de demostración (como borradores)', 'pio' ),
 		'crearPunto'        => __( 'Añadir un punto', 'pio' ),
 		'todoVerificado'    => __( '¡Todo verificado! No queda ningún punto sin verificar con este filtro.', 'pio' ),
 		'verificado'        => __( 'Verificado', 'pio' ),

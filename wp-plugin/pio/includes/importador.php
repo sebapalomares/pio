@@ -4,6 +4,7 @@
  * app/src/data/demo.ts con `npm run exportar-demo-wp`).
  *
  * - Solo administradores (Puntos de interés → Importar demostración).
+ * - Todo se crea como BORRADOR: no se ve en la web ni en la API pública hasta publicarlo.
  * - Se puede ejecutar varias veces: lo que ya está importado (meta `_pio_demo_id`) no se duplica.
  * - Los puntos que en demo.ts están verificados se importan como verificados, con su autor y fecha.
  */
@@ -82,7 +83,7 @@ function pio_importar_demo( array $datos ): array {
 		$id = wp_insert_post(
 			array(
 				'post_type'    => 'pio_punto',
-				'post_status'  => 'publish',
+				'post_status'  => 'draft',
 				'post_title'   => $p['nombre'],
 				'post_content' => $p['descripcion'] ?? '',
 				'post_author'  => get_current_user_id(),
@@ -140,7 +141,7 @@ function pio_importar_demo( array $datos ): array {
 		$id = wp_insert_post(
 			array(
 				'post_type'    => 'pio_ruta',
-				'post_status'  => 'publish',
+				'post_status'  => 'draft',
 				'post_title'   => $ruta['nombre'],
 				'post_excerpt' => $ruta['descripcion'] ?? '',
 				'post_author'  => get_current_user_id(),
@@ -205,7 +206,7 @@ function pio_pintar_importador(): void {
 				<?php
 				printf(
 					/* translators: 1: número de puntos, 2: número de rutas, 3: archivo de origen */
-					esc_html__( 'Crea %1$d puntos de interés y %2$d rutas con los datos de demostración de la app (%3$s), para tener algo que verificar desde el principio.', 'pio' ),
+					esc_html__( 'Crea %1$d puntos de interés y %2$d rutas con los datos de demostración de la app (%3$s), para tener algo que verificar desde el principio. Se crean como borradores: no se ven en la web ni en la API pública hasta que los publiques.', 'pio' ),
 					count( $datos['puntos'] ),
 					count( $datos['rutas'] ?? array() ),
 					'<code>' . esc_html( $datos['origen'] ?? 'demo.ts' ) . '</code>'

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Pío – Puntos de interés
  * Description: Puntos de interés, rutas y códigos QR para la app Pío, con API REST.
- * Version:     0.2.0
+ * Version:     0.2.1
  * Author:      Ingeniotic
  * Text Domain: pio
  * Requires PHP: 8.0
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'PIO_VERSION', '0.2.0' );
+define( 'PIO_VERSION', '0.2.1' );
 define( 'PIO_DIR', plugin_dir_path( __FILE__ ) );
 
 require_once PIO_DIR . 'includes/roles.php';

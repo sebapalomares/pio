@@ -942,11 +942,10 @@
 				pintarTodo();
 
 				if (!estado.puntos.length) {
-					var acciones = [];
+					var acciones = [enlaceBoton(T.crearPunto, C.nuevoUrl, true)];
 					if (C.importarUrl) {
-						acciones.push(enlaceBoton(T.importarDemo, C.importarUrl, true));
+						acciones.push(enlaceBoton(T.importarDemo, C.importarUrl, false));
 					}
-					acciones.push(enlaceBoton(T.crearPunto, C.nuevoUrl, !C.importarUrl));
 					abrirLista(T.sinPuntos, acciones);
 					return;
 				}

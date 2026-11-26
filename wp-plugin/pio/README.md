@@ -5,9 +5,9 @@ Modelo de datos y endpoints: `03-modelo-datos-api.md` (docs del proyecto).
 
 ## Instalar (primero en una copia de pruebas)
 
-1. Escritorio → Plugins → Añadir nuevo → Subir plugin → `pio-plugin-0.2.0.zip` → Activar.
-2. Si ya estaba la 0.1.0, basta con subir el zip y aceptar «Reemplazar la versión actual»: los permisos nuevos se aplican solos al entrar en el escritorio.
-3. Puntos de interés → **Importar demostración** → Importar (crea los 7 puntos y las 2 rutas de `app/src/data/demo.ts`; los 4 monumentos entran ya verificados).
+1. Escritorio → Plugins → Añadir nuevo → Subir plugin → `pio-plugin-0.2.1.zip` → Activar.
+2. Si ya estaba una versión anterior, basta con subir el zip y aceptar «Reemplazar la versión actual»: los permisos nuevos se aplican solos al entrar en el escritorio.
+3. Puntos de interés → **Importar demostración** → Importar (crea como **borradores** los 7 puntos y las 2 rutas de `app/src/data/demo.ts`; los 4 monumentos entran ya verificados). En la web real no hace falta: basta con añadir un punto a mano.
 
 Necesita PHP 8.0 o superior.
 
