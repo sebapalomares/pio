@@ -1,5 +1,8 @@
 # Pío · pio.turismocazorla.info
 # Fuerza HTTPS (cámara, GPS y brújula lo exigen)
+# El motor del mapa usa un archivo .mjs: el servidor debe enviarlo como JavaScript
+AddType text/javascript .mjs
+
 RewriteEngine On
 RewriteCond %{HTTPS} off
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
