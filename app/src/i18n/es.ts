@@ -40,6 +40,7 @@ export const es = {
   'ra.cercanos': 'Mira a tu alrededor · {n} lugares cerca',
   'ra.demoAlrededor': 'Modo prueba: lugares colocados a tu alrededor',
   'ra.radar': 'Radar: {n} lugares alrededor',
+  'ra.gpsImpreciso': 'GPS poco preciso (±{m} m): las etiquetas pueden desviarse',
   'ra.toca': 'Toca una etiqueta para ver el lugar',
 
   // Mapa

@@ -4,7 +4,7 @@ import { desplazar, type Coordenadas } from '../lib/geo';
  * Datos de DEMOSTRACIÓN con la misma forma que devolverá la API del plugin
  * (/wp-json/pio/v1, ver 03-modelo-datos-api.md).
  *
- * - Coordenadas aproximadas: verificarlas antes de sacar conclusiones de precisión.
+ * - Coordenadas: el castillo y Santa María están verificadas (Wikidata); el resto, SIN VERIFICAR.
  * - Lo que va entre [corchetes] lo rellenará cada gestor en WordPress: no se inventa.
  * - Los nombres de las fuentes son huecos hasta tener los reales.
  */
@@ -45,8 +45,9 @@ export const PUNTOS: Punto[] = [
     id: 'yedra',
     nombre: 'Castillo de la Yedra',
     categoria: MONUMENTO,
-    lat: 37.9099,
-    lng: -3.0001,
+    // Verificada: Wikipedia / Wikidata Q5757735
+    lat: 37.907405,
+    lng: -3.001364,
     descripcion:
       'Fortaleza que domina Cazorla desde lo alto del casco antiguo. Alberga el Museo de Artes y Costumbres Populares del Alto Guadalquivir. [Texto ampliado que redacta el gestor del lugar.]',
     horario: '[Horario]',
@@ -62,8 +63,9 @@ export const PUNTOS: Punto[] = [
     id: 'santa-maria',
     nombre: 'Ruinas de Santa María',
     categoria: MONUMENTO,
-    lat: 37.911,
-    lng: -3.0026,
+    // Verificada: Wikidata Q22829044
+    lat: 37.908611,
+    lng: -2.999806,
     descripcion: 'Restos de la iglesia de Santa María, junto a la plaza del mismo nombre. [Texto ampliado que redacta el gestor del lugar.]',
     horario: '[Horario]',
     precio: '[Precio]',
@@ -78,7 +80,7 @@ export const PUNTOS: Punto[] = [
     id: 'corredera',
     nombre: 'Plaza de la Corredera',
     categoria: MONUMENTO,
-    lat: 37.9142,
+    lat: 37.9142, // SIN VERIFICAR
     lng: -3.0035,
     descripcion: 'Plaza principal del casco urbano. [Texto ampliado que redacta el gestor del lugar.]',
     horario: null,
@@ -94,7 +96,7 @@ export const PUNTOS: Punto[] = [
     id: 'san-jose',
     nombre: 'Iglesia de San José',
     categoria: MONUMENTO,
-    lat: 37.9134,
+    lat: 37.9134, // SIN VERIFICAR
     lng: -3.0044,
     descripcion: '[Texto que redacta el gestor del lugar.]',
     horario: '[Horario]',

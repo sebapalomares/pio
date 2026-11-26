@@ -70,7 +70,11 @@ export default function ExplorarRA() {
 
       <div className="aviso-flotante">
         <Icono nombre="brujula" tamano={16} />
-        {s.modoAlrededor ? t('ra.demoAlrededor') : t('ra.cercanos', { n: puntos.length })}
+        {s.posicion && s.posicion.precision > 30
+          ? t('ra.gpsImpreciso', { m: Math.round(s.posicion.precision) })
+          : s.modoAlrededor
+            ? t('ra.demoAlrededor')
+            : t('ra.cercanos', { n: puntos.length })}
       </div>
 
       <div className="radar-sitio">
