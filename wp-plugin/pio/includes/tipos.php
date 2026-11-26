@@ -41,6 +41,10 @@ function pio_registrar_tipos(): void {
 			'menu_icon'    => 'dashicons-location',
 			'supports'     => array( 'title', 'editor', 'thumbnail', 'excerpt', 'author', 'custom-fields' ),
 			'rewrite'      => array( 'slug' => 'punto' ),
+			// Capacidades propias (edit_pio_puntos, edit_others_pio_puntos…) para que el rol
+			// «Gestor de puntos» edite solo los suyos sin tocar las entradas del blog. Ver roles.php.
+			'capability_type' => array( 'pio_punto', 'pio_puntos' ),
+			'map_meta_cap'    => true,
 		)
 	);
 
@@ -73,6 +77,12 @@ function pio_registrar_tipos(): void {
 			'show_in_rest'      => true,
 			'show_admin_column' => true,
 			'rewrite'           => array( 'slug' => 'categoria-punto' ),
+			'capabilities'      => array(
+				'manage_terms' => 'manage_categories',
+				'edit_terms'   => 'manage_categories',
+				'delete_terms' => 'manage_categories',
+				'assign_terms' => 'edit_pio_puntos',
+			),
 		)
 	);
 
@@ -84,7 +94,7 @@ function pio_registrar_tipos(): void {
 				'type'          => $tipo,
 				'single'        => true,
 				'show_in_rest'  => true,
-				'auth_callback' => fn() => current_user_can( 'edit_posts' ),
+				'auth_callback' => fn( $permitido, $clave, $post_id ) => current_user_can( 'edit_post', $post_id ),
 			)
 		);
 	}

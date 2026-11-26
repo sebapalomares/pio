@@ -27,6 +27,8 @@ export interface Punto extends Coordenadas {
   audio_url: string | null;
   num_fotos: number;
   qr_codigo: string;
+  /** true si las coordenadas están confirmadas en la pantalla «Verificar en el mapa» del plugin (D18). */
+  verificado: boolean;
 }
 
 export interface Ruta {
@@ -57,6 +59,7 @@ export const PUNTOS: Punto[] = [
     audio_url: null,
     num_fotos: 6,
     qr_codigo: 'demo-yedra',
+    verificado: true,
   },
   {
     id: 'santa-maria',
@@ -73,6 +76,7 @@ export const PUNTOS: Punto[] = [
     audio_url: null,
     num_fotos: 4,
     qr_codigo: 'demo-santa-maria',
+    verificado: true,
   },
   {
     id: 'corredera',
@@ -89,6 +93,7 @@ export const PUNTOS: Punto[] = [
     audio_url: null,
     num_fotos: 3,
     qr_codigo: 'demo-corredera',
+    verificado: true,
   },
   {
     id: 'san-jose',
@@ -105,6 +110,7 @@ export const PUNTOS: Punto[] = [
     audio_url: null,
     num_fotos: 2,
     qr_codigo: 'demo-san-jose',
+    verificado: true,
   },
   ...[1, 2, 3].map(
     (n): Punto => ({
@@ -122,6 +128,7 @@ export const PUNTOS: Punto[] = [
       audio_url: null,
       num_fotos: 1,
       qr_codigo: `demo-fuente-${n}`,
+      verificado: false,
     }),
   ),
 ];
@@ -144,6 +151,12 @@ export const RUTAS: Ruta[] = [
 ];
 
 export const CATEGORIAS: Categoria[] = [MONUMENTO, FUENTE];
+
+/**
+ * Quién y cuándo verificó los puntos con `verificado: true`. Solo lo usa el importador
+ * de demostración del plugin (`npm run exportar-demo-wp`); la API pública no lo expone.
+ */
+export const VERIFICACION_DEMO = { por: 'Sebastián', fecha: '2026-11-26', metodo: 'terreno' } as const;
 
 /** Centro aproximado de Cazorla, para decidir si el usuario está allí. */
 export const CENTRO_CAZORLA: Coordenadas = { lat: 37.9125, lng: -3.0025 };

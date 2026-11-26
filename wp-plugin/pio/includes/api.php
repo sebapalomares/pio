@@ -67,7 +67,7 @@ add_action(
 		);
 		register_rest_route(
 			PIO_NS,
-			'/qr/(?P<codigo>[A-Za-z0-9]+)',
+			'/qr/(?P<codigo>[A-Za-z0-9_-]+)',
 			array(
 				'methods'             => 'GET',
 				'callback'            => 'pio_api_qr',
@@ -108,6 +108,8 @@ function pio_resumen_punto( WP_Post $p ): array {
 		'lng'       => (float) get_post_meta( $p->ID, 'lng', true ),
 		'altitud'   => get_post_meta( $p->ID, 'altitud', true ) !== '' ? (float) get_post_meta( $p->ID, 'altitud', true ) : null,
 		'foto'      => get_the_post_thumbnail_url( $p, 'medium' ) ?: null,
+		// true si la ubicación está confirmada en «Verificar en el mapa» (D18).
+		'verificado' => pio_esta_verificado( $p->ID ),
 	);
 }
 

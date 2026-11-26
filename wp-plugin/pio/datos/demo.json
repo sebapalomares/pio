@@ -1,0 +1,178 @@
+{
+  "origen": "app/src/data/demo.ts",
+  "generado": "2026-11-26",
+  "puntos": [
+    {
+      "demo_id": "yedra",
+      "nombre": "Castillo de la Yedra",
+      "categoria": {
+        "nombre": "Monumento",
+        "slug": "monumentos"
+      },
+      "descripcion": "Fortaleza que domina Cazorla desde lo alto del casco antiguo. Alberga el Museo de Artes y Costumbres Populares del Alto Guadalquivir. [Texto ampliado que redacta el gestor del lugar.]",
+      "lat": 37.90743593295055,
+      "lng": -3.0014442711889884,
+      "horario": null,
+      "precio": null,
+      "telefono": null,
+      "web": "https://turismocazorla.info",
+      "reserva_url": "https://turismocazorla.info",
+      "audio_url": null,
+      "qr_codigo": "demo-yedra",
+      "verificacion": {
+        "por": "Sebastián",
+        "fecha": "2026-11-26",
+        "metodo": "terreno"
+      }
+    },
+    {
+      "demo_id": "santa-maria",
+      "nombre": "Ruinas de Santa María",
+      "categoria": {
+        "nombre": "Monumento",
+        "slug": "monumentos"
+      },
+      "descripcion": "Restos de la iglesia de Santa María, junto a la plaza del mismo nombre. [Texto ampliado que redacta el gestor del lugar.]",
+      "lat": 37.90839513968401,
+      "lng": -2.9997676695709248,
+      "horario": null,
+      "precio": null,
+      "telefono": null,
+      "web": "https://turismocazorla.info",
+      "reserva_url": "https://turismocazorla.info",
+      "audio_url": null,
+      "qr_codigo": "demo-santa-maria",
+      "verificacion": {
+        "por": "Sebastián",
+        "fecha": "2026-11-26",
+        "metodo": "terreno"
+      }
+    },
+    {
+      "demo_id": "corredera",
+      "nombre": "Plaza de la Corredera",
+      "categoria": {
+        "nombre": "Monumento",
+        "slug": "monumentos"
+      },
+      "descripcion": "Plaza principal del casco urbano. [Texto ampliado que redacta el gestor del lugar.]",
+      "lat": 37.91095938644883,
+      "lng": -3.0025005515625707,
+      "horario": null,
+      "precio": null,
+      "telefono": null,
+      "web": null,
+      "reserva_url": null,
+      "audio_url": null,
+      "qr_codigo": "demo-corredera",
+      "verificacion": {
+        "por": "Sebastián",
+        "fecha": "2026-11-26",
+        "metodo": "terreno"
+      }
+    },
+    {
+      "demo_id": "san-jose",
+      "nombre": "Iglesia de San José",
+      "categoria": {
+        "nombre": "Monumento",
+        "slug": "monumentos"
+      },
+      "descripcion": "[Texto que redacta el gestor del lugar.]",
+      "lat": 37.91138646100681,
+      "lng": -3.00256821536116,
+      "horario": null,
+      "precio": null,
+      "telefono": null,
+      "web": null,
+      "reserva_url": null,
+      "audio_url": null,
+      "qr_codigo": "demo-san-jose",
+      "verificacion": {
+        "por": "Sebastián",
+        "fecha": "2026-11-26",
+        "metodo": "terreno"
+      }
+    },
+    {
+      "demo_id": "fuente-1",
+      "nombre": "Fuente [nombre 1]",
+      "categoria": {
+        "nombre": "Fuente",
+        "slug": "fuentes"
+      },
+      "descripcion": "[Texto que redacta el gestor del lugar.]",
+      "lat": 37.9124,
+      "lng": -3.0021,
+      "horario": null,
+      "precio": null,
+      "telefono": null,
+      "web": null,
+      "reserva_url": null,
+      "audio_url": null,
+      "qr_codigo": "demo-fuente-1",
+      "verificacion": null
+    },
+    {
+      "demo_id": "fuente-2",
+      "nombre": "Fuente [nombre 2]",
+      "categoria": {
+        "nombre": "Fuente",
+        "slug": "fuentes"
+      },
+      "descripcion": "[Texto que redacta el gestor del lugar.]",
+      "lat": 37.913,
+      "lng": -3.0025999999999997,
+      "horario": null,
+      "precio": null,
+      "telefono": null,
+      "web": null,
+      "reserva_url": null,
+      "audio_url": null,
+      "qr_codigo": "demo-fuente-2",
+      "verificacion": null
+    },
+    {
+      "demo_id": "fuente-3",
+      "nombre": "Fuente [nombre 3]",
+      "categoria": {
+        "nombre": "Fuente",
+        "slug": "fuentes"
+      },
+      "descripcion": "[Texto que redacta el gestor del lugar.]",
+      "lat": 37.9136,
+      "lng": -3.0031,
+      "horario": null,
+      "precio": null,
+      "telefono": null,
+      "web": null,
+      "reserva_url": null,
+      "audio_url": null,
+      "qr_codigo": "demo-fuente-3",
+      "verificacion": null
+    }
+  ],
+  "rutas": [
+    {
+      "demo_id": "monumental",
+      "nombre": "Ruta monumental",
+      "descripcion": "Los monumentos principales del casco antiguo.",
+      "paradas": [
+        "yedra",
+        "santa-maria",
+        "corredera",
+        "san-jose"
+      ]
+    },
+    {
+      "demo_id": "fuentes",
+      "nombre": "Ruta de las fuentes",
+      "descripcion": "Fuentes y caños del casco urbano.",
+      "paradas": [
+        "fuente-1",
+        "fuente-2",
+        "fuente-3"
+      ]
+    }
+  ]
+}

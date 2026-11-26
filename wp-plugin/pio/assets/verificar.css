@@ -1,0 +1,603 @@
+/*
+ * Pío · Verificar puntos en el mapa (escritorio de WordPress).
+ * Colores, forma y sombra tomados del manual de identidad (app/src/styles/tokens.css).
+ * Mapa a pantalla completa por encima del menú lateral; la barra superior de WP sigue visible.
+ */
+
+body.pio-pagina-verificar {
+	overflow: hidden;
+}
+body.pio-pagina-verificar #wpfooter,
+body.pio-pagina-verificar #screen-meta-links {
+	display: none;
+}
+
+.pio-v {
+	--azul-rio: #1B6E8A;
+	--azul-rio-hondo: #13506A;
+	--azul-rio-claro: #D6E8EF;
+	--amarillo-pico: #F2B705;
+	--verde-pino: #1F5C4A;
+	--tinta: #22313A;
+	--tinta-suave: #4A5861;
+	--superficie: #FFFFFF;
+	--linea: #E3E0D6;
+	--aviso: #B3261E;
+	--sobre-azul: #FFFFFF;
+	--shadow-tarjeta: 0 1px 2px rgba(34, 49, 58, 0.08), 0 4px 12px rgba(34, 49, 58, 0.06);
+	--radius-md: 12px;
+	--radius-lg: 20px;
+	--radius-pill: 999px;
+	--zona-tactil: 48px;
+	--alto-ficha: 0px;
+
+	position: fixed;
+	inset: var(--wp-admin--admin-bar--height, 32px) 0 0 0;
+	z-index: 9991; /* por encima del menú lateral (9990), por debajo de la barra superior */
+	background: #E9EEF0;
+	color: var(--tinta);
+	font: 400 16px/24px system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+
+/* Satélite → tema oscuro (D17). */
+.pio-v[data-tema="oscuro"] {
+	--azul-rio: #5FB3D1;
+	--azul-rio-hondo: #8CCBE1;
+	--azul-rio-claro: #17323D;
+	--verde-pino: #6FB59A;
+	--tinta: #F2F4F5;
+	--tinta-suave: #B9C6CE;
+	--superficie: #1A262D;
+	--linea: #2C3A42;
+	--aviso: #FF8A80;
+	--sobre-azul: #0E1B21;
+	--shadow-tarjeta: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.pio-v [hidden] {
+	display: none !important;
+}
+
+.pio-v *,
+.pio-v *::before,
+.pio-v *::after {
+	box-sizing: border-box;
+}
+
+.pio-v-mapa {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+}
+
+.pio-v button {
+	font: inherit;
+	color: inherit;
+	cursor: pointer;
+}
+.pio-v :focus-visible {
+	outline: 3px solid var(--amarillo-pico);
+	outline-offset: 2px;
+}
+
+/* ---------- Barra superior flotante ---------- */
+.pio-v-barra {
+	position: absolute;
+	top: 12px;
+	left: 12px;
+	right: 12px;
+	z-index: 1000;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	pointer-events: none;
+}
+.pio-v-fila {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+.pio-v-fila > * {
+	pointer-events: auto;
+}
+
+.pio-v-pastilla {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-height: var(--zona-tactil);
+	padding: 0 16px;
+	border: 0;
+	border-radius: var(--radius-pill);
+	background: var(--superficie);
+	color: var(--tinta);
+	box-shadow: var(--shadow-tarjeta);
+	text-decoration: none;
+}
+
+.pio-v-logo {
+	padding: 0 16px 0 14px;
+	color: var(--tinta);
+}
+.pio-v-logo:hover,
+.pio-v-logo:focus {
+	color: var(--tinta);
+}
+.pio-v-logo img {
+	display: block;
+	height: 24px;
+	width: auto;
+}
+.pio-v-logo .pio-v-logo-oscuro,
+.pio-v[data-tema="oscuro"] .pio-v-logo .pio-v-logo-claro {
+	display: none;
+}
+.pio-v[data-tema="oscuro"] .pio-v-logo .pio-v-logo-oscuro {
+	display: block;
+}
+.pio-v-logo-texto {
+	font-weight: 600;
+	font-size: 15px;
+	color: var(--tinta-suave);
+	border-left: 1px solid var(--linea);
+	padding-left: 8px;
+}
+
+.pio-v-contador {
+	font-weight: 600;
+	font-size: 15px;
+	gap: 10px;
+}
+.pio-v-progreso {
+	display: block;
+	width: 56px;
+	height: 6px;
+	border-radius: 3px;
+	background: var(--azul-rio-claro);
+	overflow: hidden;
+}
+.pio-v-progreso > span {
+	display: block;
+	height: 100%;
+	width: 0;
+	background: var(--azul-rio);
+	transition: width 0.3s ease;
+}
+
+.pio-v-segmentado {
+	padding: 2px;
+	gap: 2px;
+}
+.pio-v-segmentado button {
+	min-height: 44px;
+	padding: 0 16px;
+	border: 0;
+	border-radius: var(--radius-pill);
+	background: transparent;
+	font-weight: 600;
+	font-size: 15px;
+	color: var(--tinta-suave);
+}
+.pio-v-segmentado button[aria-pressed="true"] {
+	background: var(--azul-rio);
+	color: var(--sobre-azul);
+}
+
+.pio-v-select {
+	padding: 0 6px 0 12px;
+}
+.pio-v .pio-v-select select {
+	min-height: 44px;
+	max-width: 200px;
+	padding: 0 28px 0 4px;
+	border: 0;
+	box-shadow: none;
+	background-color: transparent;
+	color: var(--tinta);
+	font-size: 16px; /* 16 px evita el zoom automático de iPhone */
+	font-weight: 600;
+	line-height: 44px;
+}
+.pio-v[data-tema="oscuro"] .pio-v-select select {
+	color-scheme: dark;
+}
+
+.pio-v-boton-aviso {
+	color: var(--aviso);
+	font-weight: 600;
+	font-size: 15px;
+}
+
+/* ---------- Botones redondos (capas, mi posición, zoom) ---------- */
+.pio-v-flotantes {
+	position: absolute;
+	right: 12px;
+	bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+	z-index: 1000;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 10px;
+	transition: bottom 0.2s ease;
+}
+.pio-v-redondo {
+	display: grid;
+	place-items: center;
+	width: var(--zona-tactil);
+	height: var(--zona-tactil);
+	border: 0;
+	border-radius: 50%;
+	background: var(--superficie);
+	color: var(--tinta);
+	box-shadow: var(--shadow-tarjeta);
+	font-size: 24px;
+	font-weight: 600;
+	line-height: 1;
+}
+.pio-v-redondo[aria-pressed="true"],
+.pio-v-redondo[aria-expanded="true"] {
+	background: var(--azul-rio);
+	color: var(--sobre-azul);
+}
+.pio-v-zoom {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+@media (pointer: coarse) {
+	.pio-v-zoom {
+		display: none; /* en el móvil se hace zoom con los dedos */
+	}
+}
+
+.pio-v-menu {
+	position: absolute;
+	right: 58px;
+	bottom: 0;
+	min-width: 190px;
+	padding: 6px;
+	border-radius: var(--radius-md);
+	background: var(--superficie);
+	box-shadow: var(--shadow-tarjeta);
+}
+.pio-v-menu button {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: 100%;
+	min-height: 44px;
+	padding: 0 12px;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	text-align: left;
+	font-size: 15px;
+}
+.pio-v-menu button::before {
+	content: "";
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	border: 2px solid var(--tinta-suave);
+	flex: none;
+}
+.pio-v-menu button[aria-checked="true"] {
+	font-weight: 600;
+}
+.pio-v-menu button[aria-checked="true"]::before {
+	border: 6px solid var(--azul-rio);
+}
+.pio-v-menu button:hover {
+	background: var(--azul-rio-claro);
+}
+
+/* ---------- Pines ---------- */
+.pio-v-pin {
+	background: none;
+	border: 0;
+}
+.pio-v-pin svg {
+	display: block;
+	width: 100%;
+	height: 100%;
+	filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35));
+	overflow: visible;
+}
+.pio-v-pin--activo svg {
+	filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
+}
+.leaflet-marker-draggable.pio-v-pin {
+	cursor: grab;
+}
+.leaflet-dragging .leaflet-marker-draggable.pio-v-pin {
+	cursor: grabbing;
+}
+
+/* ---------- Ficha del punto ---------- */
+.pio-v-ficha {
+	position: absolute;
+	left: 12px;
+	bottom: 24px;
+	z-index: 1001;
+	width: 400px;
+	max-width: calc(100% - 24px);
+	max-height: calc(100% - 140px);
+	overflow: auto;
+	padding: 16px 16px 12px;
+	border-radius: var(--radius-lg);
+	background: var(--superficie);
+	color: var(--tinta);
+	box-shadow: var(--shadow-tarjeta), 0 8px 28px rgba(34, 49, 58, 0.18);
+}
+.pio-v-ficha:focus {
+	outline: none;
+}
+.pio-v-ficha[hidden] {
+	display: none;
+}
+.pio-v-ficha p {
+	margin: 0;
+}
+.pio-v-ficha-cabecera {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 8px;
+}
+.pio-v-ficha-categoria {
+	font-size: 12px;
+	line-height: 16px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--tinta-suave);
+}
+.pio-v .pio-v-ficha-nombre {
+	margin: 2px 0 0;
+	padding: 0;
+	font-size: 20px;
+	line-height: 26px;
+	font-weight: 700;
+	color: var(--tinta);
+}
+.pio-v-cerrar {
+	flex: none;
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	margin: -8px -8px 0 0;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: var(--tinta-suave);
+}
+.pio-v-cerrar:hover {
+	background: var(--azul-rio-claro);
+}
+
+.pio-v-estado {
+	margin-top: 10px !important;
+	font-size: 14px;
+	line-height: 20px;
+	font-weight: 600;
+}
+.pio-v-estado.es-verificado {
+	color: var(--azul-rio);
+}
+.pio-v-estado.es-pendiente {
+	color: var(--aviso);
+}
+.pio-v-estado small {
+	display: block;
+	font-weight: 400;
+	color: var(--tinta-suave);
+}
+.pio-v-pista,
+.pio-v-movido,
+.pio-v-gps {
+	margin-top: 8px !important;
+	font-size: 14px;
+	line-height: 20px;
+	color: var(--tinta-suave);
+}
+.pio-v-movido {
+	color: var(--tinta);
+}
+.pio-v-enlace {
+	min-height: 44px;
+	padding: 0 4px;
+	border: 0;
+	background: none;
+	color: var(--azul-rio) !important;
+	font-weight: 600;
+	text-decoration: underline;
+}
+.pio-v-gps {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	border-radius: var(--radius-md);
+	background: var(--azul-rio-claro);
+	color: var(--tinta);
+}
+.pio-v-gps[hidden] {
+	display: none;
+}
+.pio-v-gps::before {
+	content: "";
+	flex: none;
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: var(--tinta-suave);
+}
+.pio-v-gps.es-buena::before {
+	background: #2E8540;
+}
+.pio-v-gps.es-regular::before {
+	background: var(--amarillo-pico);
+}
+.pio-v-gps.es-mala::before {
+	background: var(--aviso);
+}
+
+.pio-v-acciones {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 14px;
+}
+.pio-v-boton {
+	flex: 1 1 170px;
+	min-height: var(--zona-tactil);
+	padding: 8px 16px;
+	border-radius: var(--radius-pill);
+	font-weight: 600 !important;
+	font-size: 15px !important;
+	line-height: 20px;
+}
+.pio-v-boton:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+.pio-v-boton-principal {
+	border: 2px solid var(--azul-rio);
+	background: var(--azul-rio);
+	color: var(--sobre-azul) !important;
+}
+.pio-v-boton-secundario {
+	border: 2px solid var(--azul-rio);
+	background: transparent;
+	color: var(--azul-rio) !important;
+}
+.pio-v-boton-secundario[aria-pressed="true"] {
+	background: var(--azul-rio-claro);
+}
+.pio-v-pie {
+	margin-top: 12px !important;
+	font-size: 13px;
+	line-height: 18px;
+	color: var(--tinta-suave);
+}
+.pio-v-pie a {
+	color: var(--azul-rio);
+	font-weight: 600;
+}
+.pio-v-siguiente {
+	margin-top: 10px !important;
+}
+
+/* Lista (sin coordenadas, mapa vacío) */
+.pio-v-lista {
+	margin: 10px 0 0;
+	padding: 0;
+	list-style: none;
+}
+.pio-v-lista li {
+	margin: 0;
+}
+.pio-v-lista button,
+.pio-v-lista a {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	min-height: 48px;
+	padding: 8px 4px;
+	border: 0;
+	border-bottom: 1px solid var(--linea);
+	background: none;
+	color: var(--tinta);
+	text-align: left;
+	text-decoration: none;
+	font-weight: 600;
+}
+.pio-v-lista small {
+	margin-left: auto;
+	padding-left: 8px;
+	font-weight: 400;
+	color: var(--tinta-suave);
+}
+.pio-v-lista .pio-v-boton {
+	justify-content: center;
+	margin-top: 8px;
+	border-bottom: 2px solid var(--azul-rio);
+}
+
+/* Aviso breve */
+.pio-v-aviso {
+	position: absolute;
+	left: 50%;
+	bottom: calc(var(--alto-ficha) + 24px);
+	z-index: 1002;
+	transform: translateX(-50%);
+	max-width: min(440px, calc(100% - 24px));
+	padding: 12px 18px;
+	border-radius: var(--radius-md);
+	background: var(--tinta);
+	color: var(--superficie);
+	font-size: 15px;
+	line-height: 20px;
+	font-weight: 600;
+	box-shadow: var(--shadow-tarjeta);
+	text-align: center;
+}
+.pio-v-aviso[hidden] {
+	display: none;
+}
+
+/* Atribución de los mapas, más discreta */
+.pio-v .leaflet-control-attribution {
+	font-size: 11px;
+}
+
+/* ---------- Móvil: la ficha es una hoja inferior ---------- */
+@media (max-width: 700px) {
+	.pio-v-barra {
+		top: 8px;
+		left: 8px;
+		right: 8px;
+		gap: 6px;
+	}
+	.pio-v-fila {
+		gap: 6px;
+		width: 100%;
+	}
+	.pio-v-contador {
+		margin-left: auto;
+	}
+	.pio-v-logo-texto {
+		display: none;
+	}
+	.pio-v-segmentado button {
+		padding: 0 12px;
+	}
+	.pio-v-select {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+	.pio-v .pio-v-select select {
+		width: 100%;
+		max-width: none;
+	}
+	.pio-v-ficha {
+		left: 0;
+		right: 0;
+		bottom: 0;
+		width: auto;
+		max-width: none;
+		max-height: 62%;
+		padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+		border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+	}
+	.pio-v-flotantes {
+		right: 8px;
+		bottom: calc(var(--alto-ficha) + 28px + env(safe-area-inset-bottom, 0px));
+	}
+	.pio-v-boton {
+		flex-basis: 100%;
+	}
+}
