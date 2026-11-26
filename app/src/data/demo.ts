@@ -4,7 +4,7 @@ import { desplazar, type Coordenadas } from '../lib/geo';
  * Datos de DEMOSTRACIÓN con la misma forma que devolverá la API del plugin
  * (/wp-json/pio/v1, ver 03-modelo-datos-api.md).
  *
- * - Coordenadas: el castillo y Santa María están verificadas (Wikidata); el resto, SIN VERIFICAR.
+ * - Coordenadas: los 4 monumentos están verificados sobre el terreno; las fuentes son huecos de prueba.
  * - Lo que va entre [corchetes] lo rellenará cada gestor en WordPress: no se inventa.
  * - Los nombres de las fuentes son huecos hasta tener los reales.
  */
@@ -45,9 +45,8 @@ export const PUNTOS: Punto[] = [
     id: 'yedra',
     nombre: 'Castillo de la Yedra',
     categoria: MONUMENTO,
-    // Verificada: Wikipedia / Wikidata Q5757735
-    lat: 37.907405,
-    lng: -3.001364,
+    lat: 37.90743593295055, // Verificada por Sebastián (26/11/2026)
+    lng: -3.0014442711889884,
     descripcion:
       'Fortaleza que domina Cazorla desde lo alto del casco antiguo. Alberga el Museo de Artes y Costumbres Populares del Alto Guadalquivir. [Texto ampliado que redacta el gestor del lugar.]',
     horario: '[Horario]',
@@ -63,9 +62,8 @@ export const PUNTOS: Punto[] = [
     id: 'santa-maria',
     nombre: 'Ruinas de Santa María',
     categoria: MONUMENTO,
-    // Verificada: Wikidata Q22829044
-    lat: 37.908611,
-    lng: -2.999806,
+    lat: 37.90839513968401, // Verificada por Sebastián (26/11/2026)
+    lng: -2.9997676695709248,
     descripcion: 'Restos de la iglesia de Santa María, junto a la plaza del mismo nombre. [Texto ampliado que redacta el gestor del lugar.]',
     horario: '[Horario]',
     precio: '[Precio]',
@@ -80,8 +78,8 @@ export const PUNTOS: Punto[] = [
     id: 'corredera',
     nombre: 'Plaza de la Corredera',
     categoria: MONUMENTO,
-    lat: 37.9142, // SIN VERIFICAR
-    lng: -3.0035,
+    lat: 37.91095938644883, // Verificada por Sebastián (26/11/2026)
+    lng: -3.0025005515625707,
     descripcion: 'Plaza principal del casco urbano. [Texto ampliado que redacta el gestor del lugar.]',
     horario: null,
     precio: null,
@@ -96,8 +94,8 @@ export const PUNTOS: Punto[] = [
     id: 'san-jose',
     nombre: 'Iglesia de San José',
     categoria: MONUMENTO,
-    lat: 37.9134, // SIN VERIFICAR
-    lng: -3.0044,
+    lat: 37.91138646100681, // Verificada por Sebastián (26/11/2026)
+    lng: -3.00256821536116,
     descripcion: '[Texto que redacta el gestor del lugar.]',
     horario: '[Horario]',
     precio: null,

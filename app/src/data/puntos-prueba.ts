@@ -12,10 +12,10 @@ export interface PuntoPrueba extends Coordenadas {
  * (tarea de la Fase 0) antes de sacar conclusiones de precisión.
  */
 export const PUNTOS_CAZORLA: PuntoPrueba[] = [
-  { id: 'yedra', nombre: 'Castillo de la Yedra', categoria: 'Monumento', lat: 37.907405, lng: -3.001364 },
-  { id: 'santa-maria', nombre: 'Ruinas de Santa María', categoria: 'Monumento', lat: 37.908611, lng: -2.999806 },
-  { id: 'corredera', nombre: 'Plaza de la Corredera', categoria: 'Plaza', lat: 37.9142, lng: -3.0035 },
-  { id: 'san-jose', nombre: 'Iglesia de San José', categoria: 'Iglesia', lat: 37.9134, lng: -3.0044 },
+  { id: 'yedra', nombre: 'Castillo de la Yedra', categoria: 'Monumento', lat: 37.90743593295055, lng: -3.0014442711889884 },
+  { id: 'santa-maria', nombre: 'Ruinas de Santa María', categoria: 'Monumento', lat: 37.90839513968401, lng: -2.9997676695709248 },
+  { id: 'corredera', nombre: 'Plaza de la Corredera', categoria: 'Plaza', lat: 37.91095938644883, lng: -3.0025005515625707 },
+  { id: 'san-jose', nombre: 'Iglesia de San José', categoria: 'Iglesia', lat: 37.91138646100681, lng: -3.00256821536116 },
 ];
 
 /**
