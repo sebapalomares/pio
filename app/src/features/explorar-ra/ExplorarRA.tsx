@@ -45,18 +45,19 @@ export default function ExplorarRA() {
           <button
             key={p.id}
             type="button"
-            className={seleccionado?.id === p.id ? 'etiqueta-ra elegida' : 'etiqueta-ra'}
+            className={['etiqueta-ra', seleccionado?.id === p.id && 'elegida', !p.verificado && 'aprox'].filter(Boolean).join(' ')}
             style={{
               left: p.x,
               top: `max(160px, calc(${horizonte}% - ${72 + p.fila * 60}px))`,
             }}
             onClick={() => setElegido(p.id)}
           >
-            <img src="/brand/pio-pin-azul.svg" alt="" />
+            {/* Ubicación sin verificar (D18): salen en la RA, pero marcadas como aproximadas */}
+            <img src={p.verificado ? '/brand/pio-pin-azul.svg' : '/brand/pio-pin-aprox.svg'} alt="" />
             <span className="etiqueta-texto">
               <strong>{p.nombre}</strong>
               <span>
-                {formatearDistancia(p.d)} · {p.categoria.nombre}
+                {p.verificado ? formatearDistancia(p.d) : t('ra.aprox', { distancia: formatearDistancia(p.d) })} · {p.categoria.nombre}
               </span>
             </span>
           </button>
@@ -105,13 +106,13 @@ export default function ExplorarRA() {
         {seleccionado ? (
           <>
             <div className="fila-lugar">
-              <FotoHueco slug={seleccionado.categoria.slug} tamano={64} />
+              <FotoHueco slug={seleccionado.categoria.slug} tamano={64} foto={seleccionado.foto} />
               <div className="fila-lugar-texto">
                 <span className="etiqueta-azul">
                   {seleccionado.categoria.nombre} · {formatearDistancia(seleccionado.d)}
                 </span>
                 <h2 className="titulo-3">{seleccionado.nombre}</h2>
-                {seleccionado.horario && <span className="texto-suave">{seleccionado.horario}</span>}
+                {!seleccionado.verificado && <span className="texto-suave">{t('ra.aproxTexto')}</span>}
               </div>
             </div>
             <div className="fila-botones">

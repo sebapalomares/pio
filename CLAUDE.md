@@ -8,6 +8,7 @@
 - Nunca inventar horarios, precios ni nombres de lugares: van en WordPress. Las coordenadas de `src/data/puntos-prueba.ts` son aproximadas y solo para pruebas.
 - Accesibilidad: botones reales, objetivos táctiles de 44 px o más, contraste AA.
 - Antes de terminar una tarea: `cd app && npm run build` sin errores y `php -l` en los PHP tocados.
-- Fase actual: **Fase 1 — prueba técnica de RA** (ver `docs/prueba-ra.md`), con una **demo navegable de las 8 pantallas** y datos de prueba (`app/src/data/demo.ts`, `docs/prueba-pantallas.md`).
+- Fase actual: **Fase 1 — prueba técnica de RA** (ver `docs/prueba-ra.md`) y **Fase 3 — núcleo de la app**: las 8 pantallas usan la API del plugin (`docs/prueba-pantallas.md`).
+- Datos: siempre por `src/lib/datos.tsx` (`useDatos`, `useFicha`, `useQr`) y `src/lib/api.ts` (siempre con `?lang=`). `src/data/demo.ts` es solo respaldo en desarrollo e importador del plugin: **nunca** se importa fuera de `import.meta.env.DEV`.
 - Textos de la interfaz: siempre en `app/src/i18n/es.ts` y con `t()` (D11).
 - Logotipo sobre mapa, cámara o foto: siempre en pastilla (`LogoPastilla`, D17).

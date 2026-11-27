@@ -67,7 +67,7 @@ add_action(
 		);
 		register_rest_route(
 			PIO_NS,
-			'/qr/(?P<codigo>[A-Za-z0-9]+)',
+			'/qr/(?P<codigo>[A-Za-z0-9_-]+)',
 			array(
 				'methods'             => 'GET',
 				'callback'            => 'pio_api_qr',
@@ -87,33 +87,37 @@ function pio_distancia( float $lat1, float $lng1, float $lat2, float $lng2 ): fl
 }
 
 function pio_categoria_de( int $id ): ?array {
-	$terminos = get_the_terms( $id, 'pio_categoria' );
+	$terminos = get_the_terms( $id, pio_taxonomia_categoria() );
 	if ( empty( $terminos ) || is_wp_error( $terminos ) ) {
 		return null;
 	}
 	return array(
 		'id'     => $terminos[0]->term_id,
-		'nombre' => $terminos[0]->name,
+		'nombre' => html_entity_decode( $terminos[0]->name, ENT_QUOTES, 'UTF-8' ),
 		'slug'   => $terminos[0]->slug,
 	);
 }
 
 /** Resumen de un punto para listas, mapa y RA. */
 function pio_resumen_punto( WP_Post $p ): array {
+	$coords  = pio_coords_punto( $p->ID );
+	$altitud = get_post_meta( $p->ID, 'altitud', true );
 	return array(
-		'id'        => $p->ID,
-		'nombre'    => get_the_title( $p ),
-		'categoria' => pio_categoria_de( $p->ID ),
-		'lat'       => (float) get_post_meta( $p->ID, 'lat', true ),
-		'lng'       => (float) get_post_meta( $p->ID, 'lng', true ),
-		'altitud'   => get_post_meta( $p->ID, 'altitud', true ) !== '' ? (float) get_post_meta( $p->ID, 'altitud', true ) : null,
-		'foto'      => get_the_post_thumbnail_url( $p, 'medium' ) ?: null,
+		'id'         => $p->ID,
+		'nombre'     => html_entity_decode( get_the_title( $p ), ENT_QUOTES, 'UTF-8' ),
+		'categoria'  => pio_categoria_de( $p->ID ),
+		'lat'        => $coords['lat'] ?? null,
+		'lng'        => $coords['lng'] ?? null,
+		'altitud'    => '' !== $altitud ? (float) $altitud : null,
+		'foto'       => get_the_post_thumbnail_url( $p, 'medium' ) ?: null,
+		// true si la ubicación está confirmada en «Verificar en el mapa» (D18).
+		'verificado' => pio_esta_verificado( $p->ID ),
 	);
 }
 
 function pio_api_puntos( WP_REST_Request $req ): WP_REST_Response {
 	$args = array(
-		'post_type'      => 'pio_punto',
+		'post_type'      => pio_tipo_punto(),
 		'post_status'    => 'publish',
 		'posts_per_page' => 500,
 		'no_found_rows'  => true,
@@ -124,14 +128,15 @@ function pio_api_puntos( WP_REST_Request $req ): WP_REST_Response {
 	if ( $req['categoria'] ) {
 		$args['tax_query'] = array(
 			array(
-				'taxonomy' => 'pio_categoria',
+				'taxonomy' => pio_taxonomia_categoria(),
 				'field'    => 'slug',
 				'terms'    => sanitize_title( $req['categoria'] ),
 			),
 		);
 	}
 
-	$puntos = array_map( 'pio_resumen_punto', get_posts( $args ) );
+	// Un punto sin coordenadas no se puede poner en el mapa ni en la RA.
+	$puntos = array_values( array_filter( array_map( 'pio_resumen_punto', get_posts( $args ) ), fn( $p ) => null !== $p['lat'] ) );
 
 	if ( null !== $req['lat'] && null !== $req['lng'] ) {
 		$lat = (float) $req['lat'];
@@ -150,34 +155,42 @@ function pio_api_puntos( WP_REST_Request $req ): WP_REST_Response {
 
 function pio_api_punto( WP_REST_Request $req ) {
 	$p = get_post( (int) $req['id'] );
-	if ( ! $p || 'pio_punto' !== $p->post_type || 'publish' !== $p->post_status ) {
+	if ( ! $p || ! pio_es_punto( $p ) || 'publish' !== $p->post_status ) {
 		return new WP_Error( 'pio_no_encontrado', 'Punto no encontrado', array( 'status' => 404 ) );
 	}
-	$galeria = array_filter( array_map( 'intval', (array) get_post_meta( $p->ID, 'galeria', true ) ) );
 
 	return rest_ensure_response(
 		pio_resumen_punto( $p ) + array(
 			'descripcion' => apply_filters( 'the_content', $p->post_content ),
-			'galeria'     => array_values( array_filter( array_map( fn( $id ) => wp_get_attachment_image_url( $id, 'large' ), $galeria ) ) ),
-			'horario'     => get_post_meta( $p->ID, 'horario', true ) ?: null,
-			'precio'      => get_post_meta( $p->ID, 'precio', true ) ?: null,
-			'telefono'    => get_post_meta( $p->ID, 'telefono', true ) ?: null,
-			'web'         => get_post_meta( $p->ID, 'web', true ) ?: null,
-			'reserva_url' => get_post_meta( $p->ID, 'reserva_url', true ) ?: null,
-			'video_url'   => get_post_meta( $p->ID, 'video_url', true ) ?: null,
-			'audio_url'   => get_post_meta( $p->ID, 'audio_url', true ) ?: null,
+			'galeria'     => pio_galeria_punto( $p->ID ),
+			'direccion'   => pio_campo_punto( $p->ID, 'direccion' ),
+			'horario'     => pio_campo_punto( $p->ID, 'horario' ),
+			'precio'      => pio_campo_punto( $p->ID, 'precio' ),
+			'telefono'    => pio_campo_punto( $p->ID, 'telefono' ),
+			'web'         => pio_campo_punto( $p->ID, 'web' ),
+			'reserva_url' => pio_campo_punto( $p->ID, 'reserva_url' ),
+			'video_url'   => pio_campo_punto( $p->ID, 'video_url' ),
+			'audio_url'   => pio_campo_punto( $p->ID, 'audio_url' ),
+			'enlace'      => get_permalink( $p ),
 		)
 	);
 }
 
 function pio_api_categorias(): WP_REST_Response {
-	$terminos = get_terms( array( 'taxonomy' => 'pio_categoria', 'hide_empty' => false ) );
+	$terminos = get_terms(
+		array(
+			'taxonomy'   => pio_taxonomia_categoria(),
+			'hide_empty' => false,
+			// Con las categorías del blog, solo las que usan los puntos.
+			'object_ids' => pio_usa_tipo_externo() ? get_posts( array( 'post_type' => pio_tipo_punto(), 'post_status' => 'publish', 'posts_per_page' => 2000, 'fields' => 'ids' ) ) : null,
+		)
+	);
 	if ( is_wp_error( $terminos ) ) {
 		$terminos = array();
 	}
 	return rest_ensure_response(
 		array_map(
-			fn( $t ) => array( 'id' => $t->term_id, 'nombre' => $t->name, 'slug' => $t->slug ),
+			fn( $t ) => array( 'id' => $t->term_id, 'nombre' => html_entity_decode( $t->name, ENT_QUOTES, 'UTF-8' ), 'slug' => $t->slug ),
 			$terminos
 		)
 	);
@@ -209,7 +222,7 @@ function pio_api_ruta( WP_REST_Request $req ) {
 	$paradas = array();
 	foreach ( $ids as $id ) {
 		$p = get_post( $id );
-		if ( $p && 'publish' === $p->post_status ) {
+		if ( $p && 'publish' === $p->post_status && pio_es_punto( $p ) ) {
 			$paradas[] = pio_resumen_punto( $p );
 		}
 	}
@@ -225,7 +238,7 @@ function pio_api_ruta( WP_REST_Request $req ) {
 function pio_api_qr( WP_REST_Request $req ) {
 	$puntos = get_posts(
 		array(
-			'post_type'      => 'pio_punto',
+			'post_type'      => pio_tipo_punto(),
 			'post_status'    => 'publish',
 			'posts_per_page' => 1,
 			'meta_key'       => 'qr_codigo',

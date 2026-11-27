@@ -5,7 +5,7 @@ import { useCamara } from '../../lib/sensores';
 import { useLectura } from '../../lib/voz';
 import { anguloRelativo, distancia, formatearDistancia, rumbo } from '../../lib/geo';
 import { minutosAPie } from '../../lib/ra';
-import { buscarPunto } from '../../data/demo';
+import { buscarPunto, useDatos, useFicha } from '../../lib/datos';
 import { Icono } from '../../components/Icono';
 
 const LLEGADA_M = 25;
@@ -16,8 +16,21 @@ export default function Guia() {
   const s = useSensores();
   const { video } = useCamara(true);
   const voz = useLectura();
-  const p = buscarPunto(id, s.puntos);
-  if (!p) return null;
+  const { datos, cargando } = useDatos();
+  const { ficha } = useFicha(id);
+  const p = buscarPunto(s.puntos, id);
+  if (!p) {
+    // Sin coordenadas (D19) no se puede guiar; o los datos aún no han llegado
+    return (
+      <main className="pantalla pantalla-texto">
+        <p>{!datos && cargando ? t('comun.cargando') : ficha ? t('ficha.sinUbicacion') : t('ficha.noEncontrado')}</p>
+        <Link to={`/lugar/${id}`} className="boton-secundario">
+          {t('comun.verFicha')}
+        </Link>
+      </main>
+    );
+  }
+  const texto = ficha?.texto ?? '';
 
   const d = s.posicion ? distancia(s.posicion, p) : null;
   const rel = s.posicion && s.orientacion !== null ? anguloRelativo(rumbo(s.posicion, p), s.orientacion) : null;
@@ -72,13 +85,13 @@ export default function Guia() {
           <span className="circulo-suave">
             <Icono nombre="auriculares" tamano={22} />
           </span>
-          <p className="pequeno">{p.nombre}. {p.descripcion.replace(/\[[^\]]*\]/g, '').trim()}</p>
+          <p className="pequeno">{p.nombre}{texto && `. ${texto}`}</p>
           <button
             type="button"
             className="boton-circular"
             aria-label={voz.hablando ? t('comun.parar') : t('comun.escuchar')}
-            onClick={() => voz.alternar(`${p.nombre}. ${p.descripcion}`)}
-            disabled={!voz.disponible}
+            onClick={() => voz.alternar(`${p.nombre}. ${texto}`)}
+            disabled={!voz.disponible || !texto}
           >
             <Icono nombre={voz.hablando ? 'pausa' : 'play'} tamano={20} />
           </button>

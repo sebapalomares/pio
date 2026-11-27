@@ -3,21 +3,12 @@ import { Link } from 'react-router-dom';
 import { t } from '../../i18n';
 import { useAlmacen } from '../../lib/almacen';
 import { useSensores } from '../../lib/contexto';
-import { PUNTOS } from '../../data/demo';
+import { useDatos } from '../../lib/datos';
 import { Icono } from '../../components/Icono';
 
-// Lista de comprobación de pantallas (solo para la fase de pruebas).
-const PANTALLAS: { n: number; nombre: string; a: string; que: string }[] = [
-  { n: 0, nombre: 'Bienvenida y permisos', a: '/', que: 'Pide cámara, ubicación y orientación; «Empezar» lleva a la cámara.' },
-  { n: 1, nombre: 'Explorar con la cámara', a: '/explorar', que: 'Etiquetas sobre la imagen, siguen al girar e inclinar; radar con la N; tocar una etiqueta cambia la tarjeta.' },
-  { n: 2, nombre: 'Mapa', a: '/mapa', que: 'Mapa real con pines; filtros; buscador; estilos Calles, Relieve y Noche; la lista lleva a la ficha.' },
-  { n: 3, nombre: 'Ficha del lugar (completa)', a: '/lugar/yedra', que: 'Todos los datos; «Escuchar» lee el texto en voz alta; «Llévame»; «Reservar»; mochila; rutas.' },
-  { n: 4, nombre: 'Guiado', a: '/guia/yedra', que: 'Flecha que apunta al lugar, distancia y minutos; «Has llegado» a menos de 25 m; Google Maps.' },
-  { n: 5, nombre: 'Escanear QR', a: '/escanear', que: 'Lee los QR de prueba de esta página; también «Probar sin código».' },
-  { n: 6, nombre: 'Pasaporte', a: '/pasaporte', que: 'Rutas con su progreso; cambia al conseguir sellos.' },
-  { n: 7, nombre: 'Detalle de ruta', a: '/ruta/monumental', que: 'Mini mapa, paradas selladas, siguiente y pendientes; botón para ir a la siguiente.' },
-  { n: 8, nombre: 'Sello conseguido', a: '/sello/yedra', que: 'Se ve el sello y el progreso; lleva a la siguiente parada.' },
-];
+// Lista de comprobación de pantallas (solo para la fase de pruebas). Los enlaces usan
+// el primer lugar y la primera ruta que lleguen de la API.
+const PANTALLAS = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const;
 
 const CLAVE = 'pio:comprobadas';
 
@@ -31,7 +22,15 @@ function leerComprobadas(): number[] {
 
 export default function Pantallas() {
   const { ponerAlrededor } = useAlmacen();
-  const { modoAlrededor } = useSensores();
+  const { modoAlrededor, puntos } = useSensores();
+  const { datos, demo } = useDatos();
+  // Un lugar verificado para la ficha y el guiado, si hay; si no, el primero
+  const lugar = (puntos.find((p) => p.verificado) ?? puntos[0])?.id ?? '';
+  const ruta = datos?.rutas[0]?.id ?? '';
+  const enlace: Record<number, string> = {
+    0: '/', 1: '/explorar', 2: '/mapa', 3: `/lugar/${lugar}`, 4: `/guia/${lugar}`,
+    5: '/escanear', 6: '/pasaporte', 7: ruta ? `/ruta/${ruta}` : '/pasaporte', 8: `/sello/${lugar}`,
+  };
   const [hechas, setHechas] = useState<number[]>(leerComprobadas);
 
   const marcar = (n: number) => {
@@ -52,15 +51,15 @@ export default function Pantallas() {
         <p className="texto-suave">{t('demo.texto')}</p>
 
         <ol className="lista-comprobacion">
-          {PANTALLAS.map((p) => (
-            <li key={p.n} className="tarjeta-plana">
+          {PANTALLAS.map((n) => (
+            <li key={n} className="tarjeta-plana">
               <label className="casilla">
-                <input type="checkbox" checked={hechas.includes(p.n)} onChange={() => marcar(p.n)} />
-                <span className="solo-lector">{p.nombre}</span>
+                <input type="checkbox" checked={hechas.includes(n)} onChange={() => marcar(n)} />
+                <span className="solo-lector">{t(`pantallas.${n}.nombre`)}</span>
               </label>
-              <Link to={p.a} className="fila-lista-texto enlace-pantalla">
-                <strong>{p.n}. {p.nombre}</strong>
-                <span className="nota">{p.que}</span>
+              <Link to={enlace[n]} className="fila-lista-texto enlace-pantalla">
+                <strong>{n}. {t(`pantallas.${n}.nombre`)}</strong>
+                <span className="nota">{t(`pantallas.${n}.que`)}</span>
               </Link>
               <Icono nombre="derecha" tamano={20} />
             </li>
@@ -77,15 +76,24 @@ export default function Pantallas() {
         </label>
 
         <h2 className="titulo-3" id="qr">{t('demo.qr')}</h2>
-        <p className="texto-suave">{t('demo.qrTexto')}</p>
-        <div className="rejilla-qr">
-          {PUNTOS.map((p) => (
-            <figure key={p.id} className="tarjeta-plana qr-demo">
-              <img src={`/demo/qr-${p.qr_codigo}.svg`} alt={`QR: ${p.nombre}`} />
-              <figcaption className="nota">{p.nombre}</figcaption>
-            </figure>
-          ))}
-        </div>
+        {demo ? (
+          <>
+            <p className="texto-suave">{t('demo.qrTexto')}</p>
+            <div className="rejilla-qr">
+              {Object.entries(demo.qr).map(([codigo, id]) => {
+                const nombre = demo.datos.puntos.find((p) => p.id === id)?.nombre ?? id;
+                return (
+                  <figure key={codigo} className="tarjeta-plana qr-demo">
+                    <img src={`/demo/qr-${codigo}.svg`} alt={`QR: ${nombre}`} />
+                    <figcaption className="nota">{nombre}</figcaption>
+                  </figure>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <p className="texto-suave">{t('demo.qrReales')}</p>
+        )}
 
         <Link to="/prueba-ra" className="boton-secundario">
           {t('demo.pruebaTecnica')}

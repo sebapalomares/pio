@@ -1,6 +1,7 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
-import { CENTRO_CAZORLA, PUNTOS, recolocarAlrededor, type Punto } from '../data/demo';
-import { distancia, type Coordenadas } from './geo';
+import { CENTRO_CAZORLA, desplazar, distancia, type Coordenadas } from './geo';
+import type { Punto } from './tipos';
+import { useDatos } from './datos';
 import { pedirPermisoBrujula, useBrujula, usePosicion, type Posicion } from './sensores';
 import { useAlmacen } from './almacen';
 
@@ -14,12 +15,26 @@ interface Sensores {
   orientacion: number | null;
   inclinacion: number | null;
   fuenteBrujula: string;
-  /** Lugares con los que trabaja la app (recolocados alrededor en modo prueba). */
+  /** Lugares con coordenadas de la API (recolocados alrededor en modo prueba). */
   puntos: Punto[];
   modoAlrededor: boolean;
 }
 
 const Contexto = createContext<Sensores | null>(null);
+
+const SIN_PUNTOS: Punto[] = [];
+
+/**
+ * Modo prueba: los mismos lugares, recolocados en círculo alrededor de un origen
+ * (entre 80 y 260 m), para probar la app en cualquier sitio.
+ */
+function recolocarAlrededor(puntos: Punto[], origen: Coordenadas): Punto[] {
+  return puntos.map((p, i) => {
+    const angulo = (i * 360) / puntos.length;
+    const metros = 80 + ((i * 37) % 180);
+    return { ...p, ...desplazar(origen, angulo, metros) };
+  });
+}
 
 export function ProveedorSensores({ children }: { children: ReactNode }) {
   const [brujulaActiva, setBrujulaActiva] = useState(false);
@@ -27,6 +42,7 @@ export function ProveedorSensores({ children }: { children: ReactNode }) {
   const { posicion, error: errorGps } = usePosicion(true);
   const { rumbo, inclinacion, fuente } = useBrujula(brujulaActiva);
   const { alrededor } = useAlmacen();
+  const reales = useDatos().datos?.puntos ?? SIN_PUNTOS;
 
   // El origen del modo prueba se fija con la primera posición, para que los lugares no se muevan contigo
   const [origen, setOrigen] = useState<Coordenadas | null>(null);
@@ -36,8 +52,8 @@ export function ProveedorSensores({ children }: { children: ReactNode }) {
   const modoAlrededor = alrededor ?? (origen ? distancia(origen, CENTRO_CAZORLA) > 3000 : false);
 
   const puntos = useMemo(
-    () => (modoAlrededor && origen ? recolocarAlrededor(PUNTOS, origen) : PUNTOS),
-    [modoAlrededor, origen],
+    () => (modoAlrededor && origen ? recolocarAlrededor(reales, origen) : reales),
+    [modoAlrededor, origen, reales],
   );
 
   const activarBrujula = async () => {

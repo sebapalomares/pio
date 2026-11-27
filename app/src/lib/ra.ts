@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { Punto } from '../data/demo';
+import type { Punto } from './tipos';
 import { anguloRelativo, distancia, rumbo, type Coordenadas } from './geo';
 
 export const CAMPO_VISION = 50; // campo de visión horizontal de la cámara en vertical (grados)

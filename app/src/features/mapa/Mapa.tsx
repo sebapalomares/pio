@@ -7,8 +7,8 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import urlWorker from 'maplibre-gl/dist/maplibre-gl-worker.mjs?url';
 import { t } from '../../i18n';
 import { useSensores } from '../../lib/contexto';
-import { distancia, formatearDistancia } from '../../lib/geo';
-import { CATEGORIAS, RUTAS, buscarPunto } from '../../data/demo';
+import { CENTRO_CAZORLA, distancia, formatearDistancia } from '../../lib/geo';
+import { buscarPunto, useDatos } from '../../lib/datos';
 import { BarraNavegacion, FotoHueco, LogoPastilla, SelectorModo } from '../../components/Comunes';
 import { Icono } from '../../components/Icono';
 
@@ -43,6 +43,9 @@ maplibregl.setWorkerUrl(urlWorker);
 /** Pantalla 2 · Mapa. Tema claro con calles y relieve, oscuro con el mapa de noche (D17). */
 export default function Mapa() {
   const s = useSensores();
+  const { datos, cargando, error } = useDatos();
+  const categorias = datos?.categorias ?? [];
+  const rutas = datos?.rutas;
   const navegar = useNavigate();
   const contenedor = useRef<HTMLDivElement>(null);
   const mapa = useRef<maplibregl.Map | null>(null);
@@ -66,7 +69,7 @@ export default function Mapa() {
   // Crear el mapa una vez
   useEffect(() => {
     if (!contenedor.current) return;
-    const centro = s.puntos[0];
+    const centro = CENTRO_CAZORLA;
     const m = new maplibregl.Map({
       container: contenedor.current,
       style: estiloMapa('calles'),
@@ -82,31 +85,33 @@ export default function Mapa() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Cambiar de estilo y dibujar la ruta monumental
+  // Cambiar de estilo y dibujar la primera ruta de WordPress (si hay)
   useEffect(() => {
     const m = mapa.current;
     if (!m) return;
     m.setStyle(estiloMapa(estilo));
     const dibujarRuta = () => {
-      const ruta = RUTAS[0];
+      const ruta = rutas?.[0];
+      if (!ruta) return;
       const coords = ruta.paradas
-        .map((id) => buscarPunto(id, s.puntos))
+        .map((id) => buscarPunto(s.puntos, id))
         .filter((p) => p !== undefined)
         .map((p) => [p.lng, p.lat]);
-      if (m.getSource('ruta')) return;
+      if (coords.length < 2 || m.getSource('ruta')) return;
       m.addSource('ruta', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } } });
       m.addLayer({
         id: 'ruta',
         type: 'line',
         source: 'ruta',
-        paint: { 'line-color': estilo === 'noche' ? '#5FB3D1' : '#1B6E8A', 'line-width': 5, 'line-opacity': 0.85 },
+        paint: { 'line-color': ruta.color || (estilo === 'noche' ? '#5FB3D1' : '#1B6E8A'), 'line-width': 5, 'line-opacity': 0.85 },
         layout: { 'line-cap': 'round', 'line-join': 'round' },
       });
     };
     m.once('style.load', dibujarRuta);
-  }, [estilo, s.puntos]);
+  }, [estilo, s.puntos, rutas]);
 
-  // Pines de los lugares (pin azul con punto amarillo, del manual)
+  // Pines de los lugares: azul con punto amarillo (manual) si la ubicación está verificada;
+  // blanco con borde azul si es aproximada (D18)
   useEffect(() => {
     const m = mapa.current;
     if (!m) return;
@@ -114,9 +119,9 @@ export default function Mapa() {
     marcadores.current = visibles.map((p) => {
       const boton = document.createElement('button');
       boton.type = 'button';
-      boton.className = 'pin-mapa';
-      boton.setAttribute('aria-label', p.nombre);
-      boton.innerHTML = '<img src="/brand/pio-pin-azul.svg" alt="" width="30" height="40">';
+      boton.className = p.verificado ? 'pin-mapa' : 'pin-mapa aprox';
+      boton.setAttribute('aria-label', p.verificado ? p.nombre : `${p.nombre} (${t('comun.aprox')})`);
+      boton.innerHTML = `<img src="/brand/${p.verificado ? 'pio-pin-azul' : 'pio-pin-aprox'}.svg" alt="" width="30" height="40">`;
       boton.addEventListener('click', () => navegar(`/lugar/${p.id}`));
       return new maplibregl.Marker({ element: boton, anchor: 'bottom' }).setLngLat([p.lng, p.lat]).addTo(m);
     });
@@ -157,9 +162,9 @@ export default function Mapa() {
           <button type="button" className="pildora" aria-pressed={categoria === 'todo'} onClick={() => setCategoria('todo')}>
             {t('mapa.todo')}
           </button>
-          {CATEGORIAS.map((c) => (
+          {categorias.map((c) => (
             <button key={c.slug} type="button" className="pildora" aria-pressed={categoria === c.slug} onClick={() => setCategoria(c.slug)}>
-              {t(`mapa.${c.slug}`)}
+              {c.nombre}
             </button>
           ))}
         </div>
@@ -183,15 +188,19 @@ export default function Mapa() {
           </button>
         </div>
         <div className="lista-lugares">
-          {visibles.length === 0 && <p className="texto-suave">{t('mapa.sinResultados')}</p>}
-          {visibles.slice(0, 6).map((p) => (
+          {/* Si la API falla sin nada guardado, el aviso con «Reintentar» sale encima de la barra */}
+          {visibles.length === 0 && !(!datos && error) && (
+            <p className="texto-suave">{!datos && cargando ? t('comun.cargando') : t('mapa.sinResultados')}</p>
+          )}
+          {visibles.slice(0, 20).map((p) => (
             <Link key={p.id} to={`/lugar/${p.id}`} className="fila-lista">
-              <FotoHueco slug={p.categoria.slug} tamano={48} />
+              <FotoHueco slug={p.categoria.slug} tamano={48} foto={p.foto} />
               <span className="fila-lista-texto">
                 <strong>{p.nombre}</strong>
                 <span className={p.categoria.slug === 'senderos' ? 'texto-verde' : 'texto-suave'}>
-                  {p.categoria.nombre}
-                  {p.d !== null && ` · ${formatearDistancia(p.d)}`}
+                  {[p.categoria.nombre, p.d !== null ? formatearDistancia(p.d) : null, p.verificado ? null : t('comun.aprox')]
+                    .filter(Boolean)
+                    .join(' · ')}
                 </span>
               </span>
               <Icono nombre="derecha" tamano={20} />

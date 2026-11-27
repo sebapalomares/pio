@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import jsQR from 'jsqr';
 import { t } from '../../i18n';
-import { useSensores } from '../../lib/contexto';
 import { useAlmacen } from '../../lib/almacen';
 import { useCamara } from '../../lib/sensores';
-import { buscarPorQr } from '../../data/demo';
+import { useSensores } from '../../lib/contexto';
+import { buscarPunto, useDatos, useFicha, useQr } from '../../lib/datos';
 import { BarraNavegacion } from '../../components/Comunes';
 import { Icono } from '../../components/Icono';
 
@@ -19,6 +19,7 @@ function extraerCodigo(texto: string): string {
 export default function Escanear() {
   const { codigo: codigoUrl } = useParams();
   const s = useSensores();
+  const { demo } = useDatos();
   const { sellos, sellar } = useAlmacen();
   const navegar = useNavigate();
   const [codigo, setCodigo] = useState<string | null>(codigoUrl ?? null);
@@ -56,8 +57,21 @@ export default function Escanear() {
     };
   }, [codigo, video]);
 
-  const p = codigo ? buscarPorQr(codigo, s.puntos) : undefined;
+  // El código se comprueba con la API (/qr/{codigo}); los ya leídos se recuerdan sin conexión
+  const { punto: p, estado } = useQr(codigo);
+  const { ficha } = useFicha(p?.id);
+  const conCoords = p ? Boolean(buscarPunto(s.puntos, p.id)) : false;
   const yaSellado = p ? Boolean(sellos[p.id]) : false;
+  const aviso = !codigo
+    ? t('qr.apunta')
+    : p
+      ? t('qr.apunta')
+      : estado === 'cargando'
+        ? t('qr.comprobando')
+        : estado === 'sin-conexion'
+          ? t('qr.sinConexion')
+          : t('qr.invalido');
+  const codigoDemo = demo ? Object.keys(demo.qr)[0] : null;
 
   const checkin = () => {
     if (!p) return;
@@ -75,7 +89,7 @@ export default function Escanear() {
       )}
 
       <div className="aviso-superior">
-        <span className="pildora-aviso">{codigo && !p ? t('qr.invalido') : t('qr.apunta')}</span>
+        <span className="pildora-aviso" role="status">{aviso}</span>
       </div>
 
       <section className="hoja-inferior">
@@ -99,16 +113,24 @@ export default function Escanear() {
                 <strong>{t('qr.info')}</strong>
                 <span className="nota">{t('qr.infoSub')}</span>
               </Link>
-              <Link to={`/guia/${p.id}`} className="opcion">
+              <Link to={conCoords ? `/guia/${p.id}` : `/lugar/${p.id}`} className="opcion">
                 <Icono nombre="auriculares" />
                 <strong>{t('qr.audio')}</strong>
                 <span className="nota">{t('qr.audioSub')}</span>
               </Link>
-              <a href={p.reserva_url ?? '#'} className="opcion" target="_blank" rel="noopener">
-                <Icono nombre="calendario" />
-                <strong>{t('qr.reservar')}</strong>
-                <span className="nota">{t('qr.reservarSub')}</span>
-              </a>
+              {ficha?.reserva_url ? (
+                <a href={ficha.reserva_url} className="opcion" target="_blank" rel="noopener">
+                  <Icono nombre="calendario" />
+                  <strong>{t('qr.reservar')}</strong>
+                  <span className="nota">{t('qr.reservarSub')}</span>
+                </a>
+              ) : (
+                <span className="opcion desactivado" aria-disabled="true">
+                  <Icono nombre="calendario" />
+                  <strong>{t('qr.reservar')}</strong>
+                  <span className="nota">{t('qr.sinReserva')}</span>
+                </span>
+              )}
               <button type="button" className="opcion opcion-principal" onClick={checkin}>
                 <Icono nombre="pasaporte" />
                 <strong>{yaSellado ? t('qr.yaSellado') : t('qr.checkin')}</strong>
@@ -120,15 +142,23 @@ export default function Escanear() {
               {t('qr.apunta')}
             </button>
           </>
+        ) : codigo ? (
+          <button type="button" className="boton-secundario" onClick={() => setCodigo(null)}>
+            <Icono nombre="qr" tamano={20} />
+            {t('qr.otraVez')}
+          </button>
         ) : (
-          <div className="fila-botones">
-            <button type="button" className="boton-secundario" onClick={() => setCodigo('demo-yedra')}>
-              {t('qr.probar')}
-            </button>
-            <Link to="/pantallas#qr" className="boton-secundario">
-              {t('qr.qrPrueba')}
-            </Link>
-          </div>
+          // Solo con los datos de demostración (desarrollo): con datos reales no hay códigos de prueba
+          codigoDemo && (
+            <div className="fila-botones">
+              <button type="button" className="boton-secundario" onClick={() => setCodigo(codigoDemo)}>
+                {t('qr.probar')}
+              </button>
+              <Link to="/pantallas#qr" className="boton-secundario">
+                {t('qr.qrPrueba')}
+              </Link>
+            </div>
+          )
         )}
       </section>
 

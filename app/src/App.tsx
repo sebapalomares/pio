@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { ProveedorSensores } from './lib/contexto';
+import { ProveedorDatos } from './lib/datos';
 import Bienvenida from './features/inicio/Bienvenida';
 import ExplorarRA from './features/explorar-ra/ExplorarRA';
 import PruebaRA from './features/explorar-ra/PruebaRA';
@@ -17,6 +18,7 @@ const Escanear = lazy(() => import('./features/qr/Escanear'));
 
 export default function App() {
   return (
+    <ProveedorDatos>
     <ProveedorSensores>
       <Suspense fallback={<main className="pantalla" />}>
       <Routes>
@@ -37,5 +39,6 @@ export default function App() {
       </Routes>
       </Suspense>
     </ProveedorSensores>
+    </ProveedorDatos>
   );
 }

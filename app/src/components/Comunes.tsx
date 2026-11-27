@@ -1,5 +1,6 @@
 import { NavLink, Link } from 'react-router-dom';
-import { t } from '../i18n';
+import { idioma, t } from '../i18n';
+import { useDatos } from '../lib/datos';
 import { Icono, iconoCategoria, type NombreIcono } from './Icono';
 
 /** Barra inferior: Explorar, Mapa, Escanear, Pasaporte. */
@@ -12,6 +13,7 @@ export function BarraNavegacion() {
   ];
   return (
     <nav className="barra-nav" aria-label={t('nav.principal')}>
+      <AvisoDatos />
       {items.map((i) => (
         <NavLink key={i.a} to={i.a} className="barra-nav-item">
           <span className="barra-nav-icono">
@@ -53,11 +55,38 @@ export function LogoPastilla({ oscuro = false }: { oscuro?: boolean }) {
 }
 
 /** Hueco para la foto de un lugar mientras no hay fotos reales. */
-export function FotoHueco({ slug, tamano }: { slug: string; tamano: number }) {
+export function FotoHueco({ slug, tamano, foto }: { slug: string; tamano: number; foto?: string | null }) {
   return (
     <span className="foto-hueco" style={{ width: tamano, height: tamano }} aria-hidden="true">
-      <Icono nombre={iconoCategoria(slug)} tamano={Math.round(tamano * 0.4)} />
+      {foto ? <img src={foto} alt="" loading="lazy" /> : <Icono nombre={iconoCategoria(slug)} tamano={Math.round(tamano * 0.4)} />}
     </span>
+  );
+}
+
+/**
+ * Estado de los datos, encima de la barra inferior: sin conexión (con la fecha de lo guardado),
+ * datos de demostración (solo en desarrollo) o error sin nada guardado, con «Reintentar».
+ */
+export function AvisoDatos() {
+  const { datos, origen, error, fecha, cargando, recargar } = useDatos();
+  let texto: string | null = null;
+  if (origen === 'demo') texto = t('datos.demo');
+  else if (!datos && error) texto = t('datos.error');
+  else if (origen === 'cache' && error && fecha) {
+    texto = t('datos.sinConexion', {
+      fecha: new Date(fecha).toLocaleString(idioma, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+    });
+  }
+  if (!texto) return null;
+  return (
+    <div className="aviso-datos" role="status">
+      <span>{texto}</span>
+      {error && (
+        <button type="button" onClick={recargar} disabled={cargando}>
+          {cargando ? t('comun.cargando') : t('datos.reintentar')}
+        </button>
+      )}
+    </div>
   );
 }
 
