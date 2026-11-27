@@ -49,3 +49,6 @@ export function formatearDistancia(m: number): string {
   if (m < 1000) return `${Math.round(m)} m`;
   return `${(m / 1000).toFixed(1).replace('.', ',')} km`;
 }
+
+/** Centro aproximado de Cazorla, para decidir si el usuario está allí y centrar el mapa. */
+export const CENTRO_CAZORLA: Coordenadas = { lat: 37.9125, lng: -3.0025 };

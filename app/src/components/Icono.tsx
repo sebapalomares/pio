@@ -30,6 +30,8 @@ const TRAZOS = {
   gota: <><path d="M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11z" /><path d="M9 15a3 3 0 0 0 3 3" /></>,
   montana: <path d="m3 20 6-10 4 6 3-4 5 8z" />,
   capas: <><path d="m12 3 9 5-9 5-9-5z" /><path d="m3 13 9 5 9-5" /></>,
+  enlace: <><path d="M14 4h6v6" /><path d="M20 4 11 13" /><path d="M18 14v6H4V6h6" /></>,
+  ubicacion: <><path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z" /><circle cx="12" cy="9" r="2.5" /></>,
   lista: <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />,
 } as const;
 
@@ -60,4 +62,9 @@ export function iconoCategoria(slug: string): NombreIcono {
   if (slug === 'fuentes') return 'gota';
   if (slug === 'senderos') return 'montana';
   return 'castillo';
+}
+
+/** Icono de una ruta: el que se elige en WordPress (campo `icono`) si existe aquí; si no, el castillo. */
+export function iconoRuta(icono: string | null): NombreIcono {
+  return icono && Object.hasOwn(TRAZOS, icono) ? (icono as NombreIcono) : 'castillo';
 }

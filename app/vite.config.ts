@@ -29,7 +29,25 @@ export default defineConfig({
           { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
         ],
       },
-      workbox: { globPatterns: ['**/*.{js,mjs,css,html,svg,png,woff2}'], maximumFileSizeToCacheInBytes: 3 * 1024 * 1024 },
+      workbox: {
+        globPatterns: ['**/*.{js,mjs,css,html,svg,png,woff2}'],
+        // Los QR de prueba (public/demo) solo sirven con los datos de demostración, en desarrollo
+        globIgnores: ['demo/**'],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        // Los datos de la API se guardan en el móvil desde la app (lib/datos.tsx).
+        // Las fotos de los lugares (WordPress), aquí: se ven sin cobertura si ya se vieron antes.
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.hostname === 'turismocazorla.info' && url.pathname.startsWith('/wp-content/uploads/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'pio-fotos',
+              expiration: { maxEntries: 150, maxAgeSeconds: 30 * 24 * 60 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
+      },
     }),
   ],
   server: { host: true },

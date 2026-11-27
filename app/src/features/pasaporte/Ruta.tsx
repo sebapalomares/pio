@@ -3,7 +3,7 @@ import { t } from '../../i18n';
 import { useSensores } from '../../lib/contexto';
 import { useAlmacen } from '../../lib/almacen';
 import { distancia, formatearDistancia } from '../../lib/geo';
-import { buscarPunto, buscarRuta } from '../../data/demo';
+import { buscarPunto, buscarRuta, useDatos } from '../../lib/datos';
 import { Icono } from '../../components/Icono';
 import { progresoRuta } from './Pasaporte';
 
@@ -12,16 +12,29 @@ export default function Ruta() {
   const { id = '' } = useParams();
   const s = useSensores();
   const { sellos, mochila, alternarMochila } = useAlmacen();
-  const ruta = buscarRuta(id);
-  if (!ruta) return null;
+  const { datos, cargando } = useDatos();
+  const ruta = buscarRuta(datos?.rutas ?? [], id);
+  if (!ruta) {
+    return (
+      <main className="pantalla pantalla-texto">
+        <Link to="/pasaporte" className="enlace-volver">
+          <Icono nombre="atras" />
+          {t('nav.pasaporte')}
+        </Link>
+        <p>{!datos && cargando ? t('comun.cargando') : t('ruta.noEncontrada')}</p>
+      </main>
+    );
+  }
 
-  const paradas = ruta.paradas.map((pid) => buscarPunto(pid, s.puntos)).filter((p) => p !== undefined);
+  // Las paradas sin coordenadas (D19) salen en la lista, pero no en el mini mapa
+  const paradas = ruta.paradas.map((pid) => buscarPunto(s.puntos, pid) ?? { id: pid, nombre: ruta.nombres[pid] ?? pid, lat: null, lng: null });
+  const conCoords = paradas.filter((p): p is typeof p & { lat: number; lng: number } => p.lat !== null && p.lng !== null);
   const { hechos, total, siguiente, completa } = progresoRuta(ruta.paradas, sellos);
   const nSiguiente = siguiente ? ruta.paradas.indexOf(siguiente) + 1 : 0;
 
   // Mini mapa esquemático: paradas colocadas por sus coordenadas
-  const lats = paradas.map((p) => p.lat);
-  const lngs = paradas.map((p) => p.lng);
+  const lats = conCoords.map((p) => p.lat);
+  const lngs = conCoords.map((p) => p.lng);
   const [minLat, maxLat, minLng, maxLng] = [Math.min(...lats), Math.max(...lats), Math.min(...lngs), Math.max(...lngs)];
   const xy = (p: { lat: number; lng: number }) => ({
     x: 24 + ((p.lng - minLng) / (maxLng - minLng || 1)) * 310,
@@ -36,26 +49,27 @@ export default function Ruta() {
           {t('nav.pasaporte')}
         </Link>
         <div>
-          <span className="etiqueta-azul">{t('ruta.urbana', { n: total })}</span>
+          <span className="etiqueta-azul">{t('ruta.paradas', { n: total })}</span>
           <h1 className="titulo-1">{ruta.nombre}</h1>
         </div>
         <div className="fila-progreso">
           <span className="barra-progreso">
-            <span style={{ width: `${(hechos / total) * 100}%` }} />
+            <span style={{ width: `${total ? (hechos / total) * 100 : 0}%` }} />
           </span>
           <strong className="pequeno">{t('ruta.progreso', { hechos, total })}</strong>
         </div>
 
         <svg className="mini-mapa" viewBox="0 0 358 140" role="img" aria-label={ruta.nombre}>
           <polyline
-            points={paradas.map((p) => `${xy(p).x},${xy(p).y}`).join(' ')}
+            points={conCoords.map((p) => `${xy(p).x},${xy(p).y}`).join(' ')}
             fill="none"
             stroke="#1B6E8A"
             strokeWidth="3"
             strokeDasharray="6 6"
             strokeLinecap="round"
           />
-          {paradas.map((p, i) => {
+          {conCoords.map((p) => {
+            const i = ruta.paradas.indexOf(p.id);
             const { x, y } = xy(p);
             const hecha = Boolean(sellos[p.id]);
             const esSiguiente = p.id === siguiente;
@@ -81,7 +95,7 @@ export default function Ruta() {
           {paradas.map((p, i) => {
             const hecha = Boolean(sellos[p.id]);
             const esSiguiente = p.id === siguiente;
-            const d = s.posicion ? distancia(s.posicion, p) : null;
+            const d = s.posicion && p.lat !== null && p.lng !== null ? distancia(s.posicion, { lat: p.lat, lng: p.lng }) : null;
             return (
               <li key={p.id}>
                 <Link to={`/lugar/${p.id}`} className="fila-parada">

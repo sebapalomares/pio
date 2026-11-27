@@ -1,8 +1,9 @@
-import { desplazar, type Coordenadas } from '../lib/geo';
+import type { Coordenadas } from '../lib/geo';
 
 /**
- * Datos de DEMOSTRACIÓN con la misma forma que devolverá la API del plugin
- * (/wp-json/pio/v1, ver 03-modelo-datos-api.md).
+ * Datos de DEMOSTRACIÓN. La app ya usa la API del plugin (lib/datos.tsx); estos datos solo se
+ * usan como respaldo en desarrollo (data/respaldo-demo.ts) y para el importador del plugin
+ * en webs sin puntos propios (`npm run exportar-demo-wp`). Nunca en producción.
  *
  * - Coordenadas: los 4 monumentos están verificados sobre el terreno; las fuentes son huecos de prueba.
  * - Lo que va entre [corchetes] lo rellenará cada gestor en WordPress: no se inventa.
@@ -161,23 +162,3 @@ export const CATEGORIAS: Categoria[] = [MONUMENTO, FUENTE];
  * de demostración del plugin (`npm run exportar-demo-wp`); la API pública no lo expone.
  */
 export const VERIFICACION_DEMO = { por: 'Sebastián', fecha: '2026-11-26', metodo: 'terreno' } as const;
-
-/** Centro aproximado de Cazorla, para decidir si el usuario está allí. */
-export const CENTRO_CAZORLA: Coordenadas = { lat: 37.9125, lng: -3.0025 };
-
-/**
- * Modo prueba: los mismos lugares, recolocados en círculo alrededor de un origen
- * (entre 80 y 260 m), para probar la app en cualquier sitio.
- */
-export function recolocarAlrededor(puntos: Punto[], origen: Coordenadas): Punto[] {
-  return puntos.map((p, i) => {
-    const angulo = (i * 360) / puntos.length;
-    const metros = 80 + ((i * 37) % 180);
-    return { ...p, ...desplazar(origen, angulo, metros) };
-  });
-}
-
-export const buscarPunto = (id: string, lista: Punto[] = PUNTOS) => lista.find((p) => p.id === id);
-export const buscarRuta = (id: string) => RUTAS.find((r) => r.id === id);
-export const buscarPorQr = (codigo: string, lista: Punto[] = PUNTOS) => lista.find((p) => p.qr_codigo === codigo);
-export const rutasDePunto = (id: string) => RUTAS.filter((r) => r.paradas.includes(id));

@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 import { t } from '../../i18n';
 import { useAlmacen } from '../../lib/almacen';
-import { RUTAS, buscarPunto } from '../../data/demo';
+import { useDatos } from '../../lib/datos';
 import { BarraNavegacion } from '../../components/Comunes';
-import { Icono } from '../../components/Icono';
+import { Icono, iconoRuta } from '../../components/Icono';
 
 /** Progreso de una ruta según los sellos guardados en el móvil. */
 export function progresoRuta(paradas: string[], sellos: Record<string, string>) {
@@ -15,7 +15,9 @@ export function progresoRuta(paradas: string[], sellos: Record<string, string>) 
 /** Pantalla 6 · Pasaporte con las rutas. */
 export default function Pasaporte() {
   const { sellos, borrarSellos } = useAlmacen();
-  const progresos = RUTAS.map((r) => ({ r, ...progresoRuta(r.paradas, sellos) }));
+  const { datos, cargando } = useDatos();
+  const rutas = datos?.rutas ?? [];
+  const progresos = rutas.map((r) => ({ r, ...progresoRuta(r.paradas, sellos) }));
   const total = Object.keys(sellos).length;
   const enMarcha = progresos.filter((p) => p.hechos > 0 && !p.completa).length;
   const completas = progresos.filter((p) => p.completa).length;
@@ -32,10 +34,11 @@ export default function Pasaporte() {
 
         <h2 className="etiqueta-suave">{t('pasaporte.rutas')}</h2>
         <div className="pila-8">
+          {progresos.length === 0 && <p className="texto-suave">{!datos && cargando ? t('comun.cargando') : t('pasaporte.sinRutas')}</p>}
           {progresos.map(({ r, hechos, total: n, siguiente, completa }) => (
             <Link key={r.id} to={`/ruta/${r.id}`} className={completa ? 'tarjeta-ruta completa' : 'tarjeta-ruta'}>
               <span className="tarjeta-ruta-icono">
-                <Icono nombre={r.tipo === 'sendero' ? 'montana' : r.id === 'fuentes' ? 'gota' : 'castillo'} />
+                <Icono nombre={iconoRuta(r.icono)} />
               </span>
               <span className="tarjeta-ruta-texto">
                 <span className="fila-entre">
@@ -43,14 +46,14 @@ export default function Pasaporte() {
                   <span className="texto-suave">{hechos} / {n}</span>
                 </span>
                 <span className="barra-progreso">
-                  <span style={{ width: `${(hechos / n) * 100}%` }} />
+                  <span style={{ width: `${n ? (hechos / n) * 100 : 0}%` }} />
                 </span>
                 <span className="nota">
                   {completa
                     ? t('pasaporte.completada')
                     : hechos === 0
                       ? t('pasaporte.sinEmpezar', { n })
-                      : t('pasaporte.siguiente', { nombre: buscarPunto(siguiente ?? '')?.nombre ?? '' })}
+                      : t('pasaporte.siguiente', { nombre: r.nombres[siguiente ?? ''] ?? '' })}
                 </span>
               </span>
             </Link>
