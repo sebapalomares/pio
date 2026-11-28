@@ -46,3 +46,9 @@ Cada lugar a la vista lleva un **recuadro (mira)** a su altura real —calculada
 ### Resultados de campo
 - **28/11, San Isicio (iPhone, Safari):** GPS ±5 m; brújula con unos 3° de error (castillo visto en el borde derecho con la brújula a 77°; rumbo real 94°). Las distancias que mostraba la app (castillo 621 m frente a 452 m reales) venían de **una versión antigua guardada en el móvil**: el servidor del subdominio estaba vacío (404). Con la pantalla a 30° el castillo caía en el borde: el campo de visión real en vertical ronda los 30–35°, no los 50° fijos que usaba «Explorar».
 - **28/11, Ruinas de Santa María (balcón de Zabaleta):** las ruinas salían ~90° a la izquierda. A menos de 100 m, el error de posición pesa mucho; pendiente de repetir con la versión nueva.
+
+### Etiquetas sin solapes (28/11, tarde)
+- Solo el lugar destacado (el centrado o el tocado) lleva etiqueta completa con la distancia; el resto, **compacta** (solo el nombre, zona táctil de 44 px).
+- Cada etiqueta busca hueco encima o debajo de su mira (y algo a los lados) sin pisar otras etiquetas, otras miras, el radar, el botón «Calibrar» ni el aviso de arriba (`data-ra-obstaculo`). Si no cabe, la mira queda sin etiqueta y el lugar sigue en el radar.
+- Lugares que caen casi en el mismo punto de la imagen (a menos de 24 px) comparten mira; la etiqueta muestra «+2», «+3»…
+- **Calibrador:** ofrece también los lugares sin verificar (después de los verificados, marcados «ubicación aproximada»): a más de 500 m, 20 m de error son unos 2°. Útil, por ejemplo, para calibrar con la Ermita de San Isicio desde el casco.

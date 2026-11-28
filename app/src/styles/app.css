@@ -651,3 +651,12 @@ a.boton-principal, a.boton-secundario { text-decoration: none; }
 .etiqueta-ra { max-width: min(260px, calc(100vw - 16px)); }
 .etiqueta-ra .etiqueta-texto { min-width: 0; }
 .etiqueta-ra .etiqueta-texto strong, .etiqueta-ra .etiqueta-texto span { overflow: hidden; text-overflow: ellipsis; }
+/* Etiqueta compacta (solo el nombre) para los lugares que no están destacados */
+.etiqueta-ra.compacta { max-width: min(170px, calc(100vw - 16px)); min-height: 34px; padding: 4px 10px 4px 6px; gap: 6px; }
+.etiqueta-ra.compacta img { width: 14px; height: 18px; }
+.etiqueta-ra.compacta .etiqueta-texto strong { font-size: 13px; line-height: 18px; white-space: nowrap; }
+.etiqueta-ra.compacta .etiqueta-texto span { display: none; }
+/* Zona táctil de 44 px aunque la etiqueta compacta mida 34 */
+.etiqueta-ra.compacta::after { content: ""; position: absolute; left: 0; right: 0; top: -5px; bottom: -5px; }
+/* «+2»: más lugares detrás de la misma mira */
+.etiqueta-mas { flex: none; padding: 0 6px; border-radius: var(--radius-pill); background: var(--azul-rio-claro); color: var(--azul-rio-hondo); font: 600 12px/20px var(--fuente-texto); }

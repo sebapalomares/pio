@@ -56,7 +56,7 @@ export default function ExplorarRA() {
         inclinacion={s.inclinacion}
         elegido={seleccionado?.id ?? null}
         onElegir={setElegido}
-        margenArriba={170}
+        margenArriba={130}
         margenAbajo={330}
       />
 
@@ -65,7 +65,7 @@ export default function ExplorarRA() {
         <SelectorModo actual="camara" />
       </header>
 
-      <div className="aviso-flotante">
+      <div className="aviso-flotante" data-ra-obstaculo>
         <Icono nombre="brujula" tamano={16} />
         {s.posicion && s.posicion.precision > 30
           ? t('ra.gpsImpreciso', { m: Math.round(s.posicion.precision) })
@@ -74,7 +74,7 @@ export default function ExplorarRA() {
             : t('ra.cercanos', { n: puntos.length })}
       </div>
 
-      <div className="radar-sitio">
+      <div className="radar-sitio" data-ra-obstaculo>
         <Radar puntos={puntos} orientacion={s.orientacion} campo={campo} />
         <Link to="/calibrar" className="boton-calibrar" aria-label={t('calibrar.abrir')}>
           <Icono nombre="brujula" tamano={18} />

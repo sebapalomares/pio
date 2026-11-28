@@ -43,14 +43,16 @@ export default function Calibrar() {
   }, [s.orientacionBruta]);
   const brujulaMedia = () => mediaCircular(lecturas.current.map((l) => l.v));
 
-  // Lugares que sirven de referencia: verificados, con la distancia y el rumbo desde aquí
+  // Lugares que sirven de referencia, con la distancia y el rumbo desde aquí: primero los
+  // verificados (del más lejano al más cercano) y después los de ubicación aproximada (D22),
+  // que valen si están lejos: 20 m de error a 600 m son unos 2°.
   const referencias = useMemo(() => {
     if (!s.posicion || s.modoAlrededor) return [];
     return s.puntos
-      .filter((p) => p.verificado)
       .map((p) => ({ ...p, d: distancia(s.posicion!, p), r: rumbo(s.posicion!, p) }))
-      .sort((a, b) => b.d - a.d);
+      .sort((a, b) => (a.verificado === b.verificado ? b.d - a.d : a.verificado ? -1 : 1));
   }, [s.puntos, s.posicion, s.modoAlrededor]);
+  const recomendado = referencias.find((p) => p.verificado && p.d >= DISTANCIA_MINIMA)?.id;
   const ref = referencias.find((p) => p.id === refId) ?? null;
 
   // Todos los lugares, con la calibración ya aplicada (para ver el resultado)
@@ -150,16 +152,19 @@ export default function Calibrar() {
               <p className="texto-suave">{t('calibrar.buscandoGps')}</p>
             ) : (
               <ul className="calibrar-lista">
-                {referencias.map((p, i) => {
+                {referencias.map((p) => {
                   const cerca = p.d < DISTANCIA_MINIMA;
                   return (
                     <li key={p.id}>
                       <button type="button" disabled={cerca || !s.brujulaActiva} onClick={() => elegir(p.id)}>
                         <span>
                           <strong>{p.nombre}</strong>
-                          <span className="texto-suave">{cerca ? t('calibrar.cerca') : formatearDistancia(p.d)}</span>
+                          <span className="texto-suave">
+                            {cerca ? t('calibrar.cerca') : formatearDistancia(p.d)}
+                            {!cerca && !p.verificado && ` · ${t('calibrar.aproximada')}`}
+                          </span>
                         </span>
-                        {i === 0 && !cerca && <span className="chip chip-azul">{t('calibrar.recomendado')}</span>}
+                        {p.id === recomendado && <span className="chip chip-azul">{t('calibrar.recomendado')}</span>}
                       </button>
                     </li>
                   );
@@ -179,6 +184,7 @@ export default function Calibrar() {
               <h2 className="titulo-3">{t('calibrar.centrar', { nombre: ref.nombre })}</h2>
               <p className="texto-suave">{t('calibrar.centrarTexto')}</p>
             </div>
+            {!ref.verificado && <p className="texto-aviso">{t('calibrar.aproximadaAviso')}</p>}
             <p className="texto-suave">
               {t('calibrar.lectura', {
                 b: s.orientacionBruta !== null ? Math.round(s.orientacionBruta) : '—',

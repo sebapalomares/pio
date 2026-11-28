@@ -110,7 +110,7 @@ export default function PruebaRA() {
         </div>
       </div>
 
-      <div className="ra-radar" role="img" aria-label={`Radar: ${puntos.length} lugares alrededor`}>
+      <div className="ra-radar" data-ra-obstaculo role="img" aria-label={`Radar: ${puntos.length} lugares alrededor`}>
         <div className="ra-radar-cono" style={{ ['--campo' as string]: `${campo}deg` }} />
         {orientacion !== null && (
           <span

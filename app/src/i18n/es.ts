@@ -51,6 +51,8 @@ export const es = {
   'ra.radar': 'Radar: {n} lugares alrededor',
   'ra.gpsImpreciso': 'GPS poco preciso (±{m} m): las etiquetas pueden desviarse',
   'ra.toca': 'Toca una etiqueta para ver el lugar',
+  'ra.masLugares': '+{n}',
+  'ra.masLugaresTexto': '{nombre} y {n} lugares más en la misma dirección',
   'ra.aprox': '≈ {distancia}',
   'ra.aproxTexto': 'Ubicación aproximada: la etiqueta puede no apuntar al sitio exacto',
 
@@ -166,6 +168,8 @@ export const es = {
   'calibrar.elige': 'Elige un lugar que tengas a la vista',
   'calibrar.cerca': 'Demasiado cerca: un error pequeño del GPS cambia mucho la dirección',
   'calibrar.recomendado': 'Recomendado',
+  'calibrar.aproximada': 'ubicación aproximada',
+  'calibrar.aproximadaAviso': 'Este lugar aún no está verificado: su ubicación puede desviarse unos metros. Cuanto más lejos esté, menos se nota. Para afinar, verifícalo en «Verificar en el mapa» de la web.',
   'calibrar.buscandoGps': 'Buscando tu posición…',
   'calibrar.gpsImpreciso': 'GPS poco preciso (±{m} m): espera unos segundos en un sitio despejado',
   'calibrar.gps': 'Tu posición: ±{m} m',
