@@ -74,5 +74,34 @@ export interface PuntoQr {
   nombre: string;
 }
 
+/** Un lugar de un viaje del planificador (D27): un punto de Pío u otro contenido de la web. */
+export interface LugarViaje {
+  id: string;
+  nombre: string;
+  /** Tipo de contenido de WordPress (puntos-de-interes, alojamientos…). */
+  tipo: string;
+  tipoNombre: string | null;
+  /** true: tiene ficha en Pío y se puede sellar; false: se abre en la web. */
+  esPunto: boolean;
+  lat: number | null;
+  lng: number | null;
+  foto: string | null;
+  verificado: boolean;
+  enlace: string | null;
+}
+
+/** Viaje armado en el planificador de turismocazorla.info y abierto en Pío (D27). */
+export interface Viaje {
+  titulo: string | null;
+  /** IDs de WordPress por día, en orden. */
+  dias: string[][];
+  lugares: Record<string, LugarViaje>;
+  /** IDs que ya no están publicados en la web. */
+  faltan: string[];
+  /** Cuándo se abrió y cuándo se resolvieron los lugares por última vez (ISO). */
+  abierto: string;
+  actualizado: string | null;
+}
+
 export const tieneCoordenadas = <T extends { lat: number | null; lng: number | null }>(p: T): p is T & Coordenadas =>
   typeof p.lat === 'number' && typeof p.lng === 'number';

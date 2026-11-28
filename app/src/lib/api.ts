@@ -1,5 +1,5 @@
 import { idioma, t } from '../i18n';
-import type { Categoria, Datos, FichaPunto, Punto, PuntoQr, Ruta } from './tipos';
+import type { Categoria, Datos, FichaPunto, LugarViaje, Punto, PuntoQr, Ruta } from './tipos';
 
 /**
  * Cliente de la API del plugin `pio` (D2, D19): https://turismocazorla.info/wp-json/pio/v1
@@ -203,4 +203,42 @@ export async function cargarFicha(id: string): Promise<FichaPunto> {
 export async function cargarQr(codigo: string): Promise<PuntoQr> {
   const r = await pedir<ResumenApi>(`/qr/${encodeURIComponent(codigo)}`);
   return { id: String(r.id), nombre: textoPlano(r.nombre) };
+}
+
+// ---------- Viaje del planificador (D27) ----------
+
+interface LugarViajeApi {
+  id: number;
+  nombre: string;
+  tipo: string;
+  tipo_nombre: string | null;
+  es_punto: boolean;
+  lat: number | null;
+  lng: number | null;
+  foto: string | null;
+  verificado?: boolean;
+  enlace: string | null;
+}
+
+/**
+ * Lugares de un viaje del planificador de turismocazorla.info (GET /viaje?ids=…).
+ * Devuelve también los IDs que ya no están publicados. 404 si la sincronización está apagada.
+ */
+export async function cargarLugaresViaje(ids: string[]): Promise<{ lugares: LugarViaje[]; faltan: string[] }> {
+  const r = await pedir<{ lugares: LugarViajeApi[]; faltan: number[] }>('/viaje', { ids: ids.join(',') });
+  return {
+    lugares: (r.lugares ?? []).map((l) => ({
+      id: String(l.id),
+      nombre: textoPlano(l.nombre),
+      tipo: l.tipo,
+      tipoNombre: textoONulo(l.tipo_nombre),
+      esPunto: l.es_punto === true,
+      lat: numero(l.lat),
+      lng: numero(l.lng),
+      foto: urlONula(l.foto),
+      verificado: l.verificado === true,
+      enlace: urlONula(l.enlace),
+    })),
+    faltan: (r.faltan ?? []).map(String),
+  };
 }

@@ -12,6 +12,7 @@ import { CENTRO_CAZORLA, distancia, formatearDistancia } from '../../lib/geo';
 import { buscarPunto, buscarRuta, useDatos } from '../../lib/datos';
 import { estiloMapa, FUENTE_NUMEROS, type Estilo } from '../../lib/estiloMapa';
 import { formatearDuracion, useTrazado } from '../../lib/trazado';
+import { diaDeRuta, esRutaViaje, useRutasViaje } from '../../lib/viaje';
 import { BarraNavegacion, FotoHueco, LogoPastilla, SelectorModo } from '../../components/Comunes';
 import { Icono, iconoRuta } from '../../components/Icono';
 import { progresoRuta } from '../pasaporte/Pasaporte';
@@ -36,6 +37,8 @@ export default function Mapa() {
   const { datos, cargando, error } = useDatos();
   const categorias = datos?.categorias ?? [];
   const rutas = useMemo(() => datos?.rutas ?? [], [datos]);
+  // Días del viaje del planificador (D27): se pueden abrir como ruta (/mapa?ruta=viaje-1), sin píldora propia
+  const rutasViaje = useRutasViaje((n) => t('viaje.dia', { n }));
   const navegar = useNavigate();
   const [params, setParams] = useSearchParams();
   const contenedor = useRef<HTMLDivElement>(null);
@@ -53,7 +56,7 @@ export default function Mapa() {
 
   // Ruta seleccionada: va en la dirección (/mapa?ruta=ID) para poder enlazarla desde la pantalla de la ruta
   const idRuta = params.get('ruta');
-  const ruta = idRuta ? buscarRuta(rutas, idRuta) ?? null : null;
+  const ruta = idRuta ? buscarRuta(rutas, idRuta) ?? buscarRuta(rutasViaje, idRuta) ?? null : null;
   const elegirRuta = (id: string | null) => {
     const p = new URLSearchParams(params);
     if (id) p.set('ruta', id);
@@ -358,7 +361,7 @@ export default function Mapa() {
             </Link>
           )}
           <div className="fila-botones">
-            <Link to={`/ruta/${ruta.id}`} className="boton-secundario">
+            <Link to={esRutaViaje(ruta.id) ? `/viaje?dia=${diaDeRuta(ruta.id)}` : `/ruta/${ruta.id}`} className="boton-secundario">
               {t('ruta.verParadas')}
             </Link>
             {progreso.completa ? (

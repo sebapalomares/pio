@@ -12,6 +12,7 @@ import Pasaporte from './features/pasaporte/Pasaporte';
 import Ruta from './features/pasaporte/Ruta';
 import Sello from './features/pasaporte/Sello';
 import Pantallas from './features/demo/Pantallas';
+import Viaje from './features/viaje/Viaje';
 
 // El mapa (MapLibre) y el lector de QR pesan: se cargan solo cuando se abren
 const Mapa = lazy(() => import('./features/mapa/Mapa'));
@@ -34,6 +35,8 @@ export default function App() {
         <Route path="/pasaporte" element={<Pasaporte />} />
         <Route path="/ruta/:id" element={<Ruta />} />
         <Route path="/sello/:id" element={<Sello />} />
+        {/* Viaje del planificador de turismocazorla.info (D27): /viaje?d=12,45~33&t=Título */}
+        <Route path="/viaje" element={<Viaje />} />
         <Route path="/pantallas" element={<Pantallas />} />
         <Route path="/prueba-ra" element={<PruebaRA />} />
         <Route path="/calibrar" element={<Calibrar />} />
