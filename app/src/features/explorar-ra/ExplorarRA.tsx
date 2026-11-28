@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { t } from '../../i18n';
 import { useSensores } from '../../lib/contexto';
 import { useCamara } from '../../lib/sensores';
 import { formatearDistancia } from '../../lib/geo';
-import { CAMPO_VISION, alturaHorizonte, usePuntosEnVista } from '../../lib/ra';
+import { usePuntosEnVista } from '../../lib/ra';
+import { useCampoVision } from '../../lib/calibracion';
+import { anguloElevacion, useElevaciones } from '../../lib/elevacion';
+import { CapaRA, type ItemRA } from '../../components/CapaRA';
 import { BarraNavegacion, FotoHueco, LogoPastilla, SelectorModo } from '../../components/Comunes';
 import { Icono } from '../../components/Icono';
 import { Radar } from '../../components/Radar';
@@ -16,52 +19,44 @@ export default function ExplorarRA() {
   const puntos = usePuntosEnVista(s.puntos, s.posicion, s.orientacion);
   const [elegido, setElegido] = useState<string | null>(null);
 
-  const enVista = puntos.filter((p) => Math.abs(p.rel) <= CAMPO_VISION / 2 + 5);
-  const seleccionado = puntos.find((p) => p.id === elegido) ?? enVista[0] ?? null;
-  const horizonte = alturaHorizonte(s.inclinacion);
+  const { campo } = useCampoVision(video);
+  const versionAlturas = useElevaciones(s.puntos, s.posicion);
 
-  // Colocación sin solapes: el más cercano, en la fila más baja (junto al horizonte);
-  // si choca con otra etiqueta, sube una fila. Como mucho 4 filas: el resto queda en el radar.
-  const ancho = window.innerWidth;
-  const filas: { x: number; w: number }[][] = [[], [], [], []];
-  const etiquetas = enVista
-    .map((p) => {
-      const x = ((50 + (p.rel / (CAMPO_VISION / 2)) * 50) / 100) * ancho;
-      const w = Math.min(260, 64 + p.nombre.length * 7.5);
-      const fila = filas.findIndex((f) => f.every((o) => Math.abs(o.x - x) > (o.w + w) / 2 + 8));
-      if (fila === -1) return null;
-      filas[fila].push({ x, w });
-      return { ...p, x, fila };
-    })
-    .filter((p) => p !== null)
-    .reverse(); // los lejanos se pintan primero, los cercanos encima
+  const enVista = puntos.filter((p) => Math.abs(p.rel) <= campo / 2 + 5);
+  // La tarjeta muestra el lugar tocado o, si no, el que tienes más centrado en la cámara.
+  const centrado = enVista.reduce<(typeof enVista)[number] | null>((m, p) => (!m || Math.abs(p.rel) < Math.abs(m.rel) ? p : m), null);
+  // (el tocado deja de mandar cuando sale de la imagen)
+  const seleccionado = enVista.find((p) => p.id === elegido) ?? centrado;
+
+  // Cada lugar con su ángulo sobre el horizonte (relieve del terreno), para la mira de RA.
+  const items: ItemRA[] = useMemo(
+    () =>
+      puntos.map((p) => ({
+        id: p.id,
+        nombre: p.nombre,
+        subtitulo: `${formatearDistancia(p.d)} · ${p.categoria.nombre}`,
+        d: p.d,
+        rel: p.rel,
+        elev: s.posicion ? anguloElevacion(s.posicion, p, p.d) : null,
+      })),
+    // versionAlturas: recalcular cuando llegan las altitudes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [puntos, s.posicion, versionAlturas],
+  );
 
   return (
     <main className="pantalla pantalla-camara" data-tema="oscuro">
       <video ref={video} className="camara-video" playsInline muted autoPlay />
 
-      <div className="ra-capa">
-        {etiquetas.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            className={seleccionado?.id === p.id ? 'etiqueta-ra elegida' : 'etiqueta-ra'}
-            style={{
-              left: p.x,
-              top: `max(160px, calc(${horizonte}% - ${72 + p.fila * 60}px))`,
-            }}
-            onClick={() => setElegido(p.id)}
-          >
-            <img src="/brand/pio-pin-azul.svg" alt="" />
-            <span className="etiqueta-texto">
-              <strong>{p.nombre}</strong>
-              <span>
-                {formatearDistancia(p.d)} · {p.categoria.nombre}
-              </span>
-            </span>
-          </button>
-        ))}
-      </div>
+      <CapaRA
+        items={items}
+        campo={campo}
+        inclinacion={s.inclinacion}
+        elegido={seleccionado?.id ?? null}
+        onElegir={setElegido}
+        margenArriba={170}
+        margenAbajo={330}
+      />
 
       <header className="cabecera-flotante">
         <LogoPastilla oscuro />
@@ -78,7 +73,11 @@ export default function ExplorarRA() {
       </div>
 
       <div className="radar-sitio">
-        <Radar puntos={puntos} orientacion={s.orientacion} campo={CAMPO_VISION} />
+        <Radar puntos={puntos} orientacion={s.orientacion} campo={campo} />
+        <Link to="/calibrar" className="boton-calibrar" aria-label={t('calibrar.abrir')}>
+          <Icono nombre="brujula" tamano={18} />
+          {t('calibrar.boton')}
+        </Link>
       </div>
 
       {!s.brujulaActiva && (

@@ -4,6 +4,7 @@ import { ProveedorSensores } from './lib/contexto';
 import Bienvenida from './features/inicio/Bienvenida';
 import ExplorarRA from './features/explorar-ra/ExplorarRA';
 import PruebaRA from './features/explorar-ra/PruebaRA';
+import Calibrar from './features/calibrar/Calibrar';
 import Ficha from './features/ficha/Ficha';
 import Guia from './features/guia/Guia';
 import Pasaporte from './features/pasaporte/Pasaporte';
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/sello/:id" element={<Sello />} />
         <Route path="/pantallas" element={<Pantallas />} />
         <Route path="/prueba-ra" element={<PruebaRA />} />
+        <Route path="/calibrar" element={<Calibrar />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </Suspense>
