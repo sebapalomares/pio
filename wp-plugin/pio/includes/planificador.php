@@ -18,6 +18,7 @@
  * Para el planificador:
  *   PHP: $url = apply_filters( 'pio_enlace_viaje', '', $dias, $titulo ); // $dias = [[12,45],[33]]
  *   JS (solo en sus páginas): if ( window.pioViaje ) { a.href = window.pioViaje.url( dias, titulo ); }
+ *   Además, assets/planificador-pio.js pone el botón «Abrir en Pío» en «Llévate la ruta» por su cuenta.
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -180,8 +181,8 @@ function pio_api_viaje( WP_REST_Request $req ) {
 }
 
 /**
- * En las páginas del planificador, si está activo: window.pioViaje.url( dias, titulo ).
- * Así el JavaScript del planificador puede poner «Abrir en Pío» sin saber cómo se arma el enlace.
+ * En las páginas del planificador, si está activo: window.pioViaje.url( dias, titulo ) y el botón
+ * «Abrir en Pío», que lee el viaje pintado por el planificador (no hace falta cambiar su código).
  */
 add_action(
 	'wp_enqueue_scripts',
@@ -190,8 +191,8 @@ add_action(
 		if ( ! pio_planificador_activo() || ! is_page( $paginas ) ) {
 			return;
 		}
-		wp_register_script( 'pio-viaje', '', array(), PIO_VERSION, true );
-		wp_enqueue_script( 'pio-viaje' );
+		// Botón «Abrir en Pío» en «Llévate la ruta» (assets/planificador-pio.js), sin tocar el planificador
+		wp_enqueue_script( 'pio-viaje', plugins_url( 'assets/planificador-pio.js', PIO_DIR . 'pio.php' ), array(), PIO_VERSION, true );
 		$app = wp_json_encode( pio_url_app() . '/viaje' );
 		$max = PIO_VIAJE_MAX_IDS;
 		wp_add_inline_script(
@@ -208,8 +209,8 @@ window.pioViaje = {
 		return {$app} + '?d=' + d + (titulo ? '&t=' + encodeURIComponent(String(titulo).slice(0, 80)) : '');
 	}
 };
-document.dispatchEvent(new Event('pio-viaje-listo'));
-JS
+JS,
+			'before'
 		);
 	}
 );
