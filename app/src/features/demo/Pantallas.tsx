@@ -87,9 +87,6 @@ export default function Pantallas() {
           ))}
         </div>
 
-        <Link to="/calibrar" className="boton-secundario">
-          {t('calibrar.enlace')}
-        </Link>
         <Link to="/prueba-ra" className="boton-secundario">
           {t('demo.pruebaTecnica')}
         </Link>

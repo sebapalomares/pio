@@ -3,7 +3,6 @@ import { CENTRO_CAZORLA, PUNTOS, recolocarAlrededor, type Punto } from '../data/
 import { distancia, type Coordenadas } from './geo';
 import { pedirPermisoBrujula, useBrujula, usePosicion, type Posicion } from './sensores';
 import { useAlmacen } from './almacen';
-import { corregirRumbo, useCalibracion } from './calibracion';
 
 interface Sensores {
   /** Sensores en marcha (GPS siempre; brújula tras un toque del usuario en iPhone). */
@@ -12,12 +11,7 @@ interface Sensores {
   avisoBrujula: boolean;
   posicion: Posicion | null;
   errorGps: string | null;
-  /** Hacia dónde mira la cámara, con la calibración aplicada (0–360). */
   orientacion: number | null;
-  /** Lo que dice la brújula sin corregir (para calibrar). */
-  orientacionBruta: number | null;
-  /** Precisión de la brújula en grados (iPhone); -1 = no fiable; null = desconocida. */
-  precisionBrujula: number | null;
   inclinacion: number | null;
   fuenteBrujula: string;
   /** Lugares con los que trabaja la app (recolocados alrededor en modo prueba). */
@@ -31,8 +25,7 @@ export function ProveedorSensores({ children }: { children: ReactNode }) {
   const [brujulaActiva, setBrujulaActiva] = useState(false);
   const [avisoBrujula, setAvisoBrujula] = useState(false);
   const { posicion, error: errorGps } = usePosicion(true);
-  const { rumbo, inclinacion, fuente, precision } = useBrujula(brujulaActiva);
-  const { desfase } = useCalibracion();
+  const { rumbo, inclinacion, fuente } = useBrujula(brujulaActiva);
   const { alrededor } = useAlmacen();
 
   // El origen del modo prueba se fija con la primera posición, para que los lugares no se muevan contigo
@@ -62,9 +55,7 @@ export function ProveedorSensores({ children }: { children: ReactNode }) {
         avisoBrujula,
         posicion,
         errorGps,
-        orientacion: corregirRumbo(rumbo, desfase),
-        orientacionBruta: rumbo,
-        precisionBrujula: precision,
+        orientacion: rumbo,
         inclinacion,
         fuenteBrujula: fuente,
         puntos,
