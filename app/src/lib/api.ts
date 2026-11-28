@@ -66,7 +66,10 @@ interface RutaApi {
   color: string | null;
   icono: string | null;
   num_paradas: number;
+  distancia?: number | null;
+  duracion?: number | null;
   paradas?: ResumenApi[];
+  trazado?: [number, number][] | null;
 }
 
 // ---------- Limpieza ----------
@@ -151,6 +154,13 @@ export function aFicha(r: FichaApi): FichaPunto {
   };
 }
 
+/** Lista de [lng, lat] válida, o null. */
+export function aTrazado(v: unknown): [number, number][] | null {
+  if (!Array.isArray(v)) return null;
+  const c = v.filter((x): x is [number, number] => Array.isArray(x) && numero(x[0]) !== null && numero(x[1]) !== null);
+  return c.length >= 2 ? c.map(([lng, lat]) => [lng, lat]) : null;
+}
+
 function aRuta(r: RutaApi): Ruta {
   const paradas = r.paradas ?? [];
   return {
@@ -161,6 +171,9 @@ function aRuta(r: RutaApi): Ruta {
     icono: r.icono || null,
     paradas: paradas.map((p) => String(p.id)),
     nombres: Object.fromEntries(paradas.map((p) => [String(p.id), textoPlano(p.nombre)])),
+    trazado: aTrazado(r.trazado),
+    distancia: numero(r.distancia),
+    duracion: numero(r.duracion),
   };
 }
 

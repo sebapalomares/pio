@@ -6,6 +6,7 @@ import { distancia, formatearDistancia } from '../../lib/geo';
 import { buscarPunto, buscarRuta, useDatos } from '../../lib/datos';
 import { Icono } from '../../components/Icono';
 import { progresoRuta } from './Pasaporte';
+import { formatearDuracion } from '../../lib/trazado';
 
 /** Pantalla 7 · Detalle de una ruta. */
 export default function Ruta() {
@@ -33,8 +34,8 @@ export default function Ruta() {
   const nSiguiente = siguiente ? ruta.paradas.indexOf(siguiente) + 1 : 0;
 
   // Mini mapa esquemático: paradas colocadas por sus coordenadas
-  const lats = conCoords.map((p) => p.lat);
-  const lngs = conCoords.map((p) => p.lng);
+  const lats = [...conCoords.map((p) => p.lat), ...(ruta.trazado ?? []).map((c) => c[1])];
+  const lngs = [...conCoords.map((p) => p.lng), ...(ruta.trazado ?? []).map((c) => c[0])];
   const [minLat, maxLat, minLng, maxLng] = [Math.min(...lats), Math.max(...lats), Math.min(...lngs), Math.max(...lngs)];
   const xy = (p: { lat: number; lng: number }) => ({
     x: 24 + ((p.lng - minLng) / (maxLng - minLng || 1)) * 310,
@@ -49,7 +50,15 @@ export default function Ruta() {
           {t('nav.pasaporte')}
         </Link>
         <div>
-          <span className="etiqueta-azul">{t('ruta.paradas', { n: total })}</span>
+          <span className="etiqueta-azul">
+            {[
+              t('ruta.paradas', { n: total }),
+              ruta.distancia ? formatearDistancia(ruta.distancia) : null,
+              ruta.duracion ? t('ruta.aPie', { tiempo: formatearDuracion(ruta.duracion) }) : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </span>
           <h1 className="titulo-1">{ruta.nombre}</h1>
         </div>
         <div className="fila-progreso">
@@ -60,13 +69,15 @@ export default function Ruta() {
         </div>
 
         <svg className="mini-mapa" viewBox="0 0 358 140" role="img" aria-label={ruta.nombre}>
+          {/* Camino a pie si ya está calculado (D25); si no, paradas unidas a trazos */}
           <polyline
-            points={conCoords.map((p) => `${xy(p).x},${xy(p).y}`).join(' ')}
+            points={(ruta.trazado ? ruta.trazado.map(([lng, lat]) => ({ lat, lng })) : conCoords).map((p) => `${xy(p).x},${xy(p).y}`).join(' ')}
             fill="none"
             stroke="#1B6E8A"
             strokeWidth="3"
-            strokeDasharray="6 6"
+            strokeDasharray={ruta.trazado ? undefined : '6 6'}
             strokeLinecap="round"
+            strokeLinejoin="round"
           />
           {conCoords.map((p) => {
             const i = ruta.paradas.indexOf(p.id);
@@ -129,7 +140,7 @@ export default function Ruta() {
         >
           <Icono nombre={mochila.includes(ruta.id) ? 'check' : 'mochila'} tamano={22} />
         </button>
-        <Link to="/mapa" className="boton-secundario">
+        <Link to={`/mapa?ruta=${encodeURIComponent(ruta.id)}`} className="boton-secundario">
           {t('nav.mapa')}
         </Link>
         {completa ? (

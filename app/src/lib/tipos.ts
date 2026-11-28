@@ -55,6 +55,11 @@ export interface Ruta {
   paradas: string[];
   /** Nombre de cada parada, para las que no salen en el mapa (sin coordenadas). */
   nombres: Record<string, string>;
+  /** Recorrido a pie entre paradas, [lng, lat], calculado en WordPress (D25). Null si aún no lo hay. */
+  trazado: [number, number][] | null;
+  /** Metros y segundos andando de toda la ruta, si hay trazado. */
+  distancia: number | null;
+  duracion: number | null;
 }
 
 export interface Datos {

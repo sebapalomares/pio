@@ -11,6 +11,7 @@ const TRAZOS = {
   flecha: <path d="M12 3 5 20l7-4 7 4z" />,
   atras: <path d="m15 18-6-6 6-6" />,
   derecha: <path d="m9 18 6-6-6-6" />,
+  arriba: <path d="m6 15 6-6 6 6" />,
   cerrar: <path d="M6 6l12 12M18 6 6 18" />,
   buscar: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></>,
   filtro: <path d="M4 6h16M7 12h10M10 18h4" />,

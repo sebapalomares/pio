@@ -32,11 +32,18 @@ Para repetir la prueba desde cero: Pasaporte → «Borrar mis sellos de prueba»
 - **Sin cobertura:** con el móvil en modo avión, la app abre con los últimos datos y avisa «Sin conexión · datos guardados el…». Las fichas y fotos ya vistas se abren; un QR nuevo necesita conexión.
 - **Desarrollo:** `npm run dev` usa la API real; si no responde y no hay nada guardado, usa los datos de demostración (`app/src/data/demo.ts`) con el aviso «solo en desarrollo». Con `VITE_PIO_DATOS=demo` en `app/.env.local`, siempre demostración. En producción, nunca.
 
+## Mapa y ruta a pie (D25, D26)
+- **Estilo de Pío:** en «Calles», fondo crema, calles blancas, agua azul y zonas verdes suaves, sin iconos de comercios. «Noche», igual en oscuro. «Relieve» sigue con curvas de nivel. Se cambian con el botón de capas (a la derecha).
+- **«Cerca de ti»:** abre recogida (título y «N lugares a menos de…»). «Ver lista» o tocar el asa la abre; el asa la vuelve a recoger. Al escribir en el buscador se abre sola y salen también las rutas que coincidan.
+- **Elegir una ruta:** píldora de la ruta en la fila de filtros, una ruta del buscador o «Mapa» en la pantalla de la ruta (`/mapa?ruta=ID`). El mapa encuadra la ruta entera, dibuja el **camino a pie** por las calles, numera las paradas (la siguiente en amarillo, las selladas en azul) y oculta los demás pines. Abajo, tarjeta con paradas, distancia y tiempo a pie, progreso y «Llévame a la parada N». La ✕ de la píldora la quita.
+- **Si no hay camino a pie:** el plugin lo calcula al pedir la ruta; si aún no lo tiene, la app lo pide y lo guarda en el móvil. Sin conexión, las paradas se unen en recto, a trazos, con un aviso.
+- **Tiempo a pie:** a paso normal en llano (unos 5 km/h); en las cuestas del casco será algo más.
+
 ## Lo que aún no es definitivo
 - Fotos: los puntos sin imagen destacada muestran el icono de la categoría.
 - Audioguía: el móvil lee el texto en voz alta mientras no haya audios grabados.
 - Mochila: guarda la marca, pero la descarga sin conexión llega en la siguiente fase (D12).
-- Mapa: teselas gratuitas (OpenStreetMap, OpenTopoMap, CARTO) solo para la demostración; en producción, proveedor propio o con contrato.
+- Mapa: OpenFreeMap (calles y noche), OpenTopoMap (relieve) y el enrutador a pie de FOSSGIS son servicios gratuitos de uso razonable; para muchos usuarios, servidor propio o con contrato (D26).
 
 ## Qué apuntar
 - Pantalla y móvil (modelo, iPhone o Android, Safari/Chrome o app instalada).

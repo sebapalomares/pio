@@ -290,24 +290,24 @@ a.boton-principal, a.boton-secundario { text-decoration: none; }
 .fila-pildoras .pildora:not([aria-pressed='true']) { box-shadow: var(--shadow-tarjeta); }
 .selector-estilo {
   position: absolute;
-  right: var(--space-4);
-  top: calc(var(--arriba) + 172px);
+  right: calc(100% + var(--space-2));
+  top: 0;
   display: flex;
   flex-direction: column;
   padding: var(--space-1);
   border-radius: var(--radius-md);
   background: var(--superficie);
   box-shadow: var(--shadow-tarjeta);
-  z-index: 2;
 }
 .selector-estilo button {
-  min-height: 40px;
-  padding: 0 var(--space-3);
+  min-height: 44px;
+  padding: 0 var(--space-4);
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--tinta);
-  font: 600 13px/16px var(--fuente-texto);
+  font: 600 14px/16px var(--fuente-texto);
+  text-align: left;
 }
 .selector-estilo button[aria-pressed='true'] { background: var(--azul-rio); color: var(--sobre-azul); }
 .hoja-inferior {
@@ -326,6 +326,67 @@ a.boton-principal, a.boton-secundario { text-decoration: none; }
   color: var(--tinta);
   z-index: 3;
 }
+/* Botones flotantes del mapa: capas y tu posición (D26) */
+.botones-mapa {
+  position: absolute;
+  right: var(--space-4);
+  top: calc(var(--arriba) + 176px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  z-index: 2;
+}
+.boton-mapa {
+  width: var(--zona-tactil);
+  height: var(--zona-tactil);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--superficie);
+  color: var(--azul-rio);
+  box-shadow: var(--shadow-tarjeta);
+  cursor: pointer;
+}
+.boton-mapa[aria-expanded='true'] { background: var(--azul-rio); color: var(--sobre-azul); }
+/* «Cerca de ti» recogida: título y resumen; la lista se abre con «Ver lista» o el asa */
+.hoja-inferior.recogida { max-height: none; gap: var(--space-2); }
+.asa-boton { align-self: center; width: 96px; height: 20px; margin: -4px 0 -6px; padding: 0; border: 0; background: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.resumen-hoja { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); font: var(--pequeno); }
+.boton-ver-lista {
+  flex: none;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--azul-rio-claro);
+  color: var(--azul-rio);
+  font: 600 14px/20px var(--fuente-texto);
+  cursor: pointer;
+}
+button.fila-lista { width: 100%; background: none; border-left: 0; border-right: 0; border-top: 0; padding: 0; text-align: left; font: inherit; cursor: pointer; }
+.icono-ruta-lista { width: 48px; height: 48px; }
+/* Tarjeta de la ruta elegida en el mapa */
+.hoja-ruta { max-height: none; gap: var(--space-2); }
+.hoja-ruta .titulo-3 { margin-top: -2px; }
+.parada-siguiente {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 56px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--crema);
+  color: var(--tinta);
+  text-decoration: none;
+}
+.fila-botones { display: flex; gap: var(--space-2); margin-top: var(--space-1); }
+.fila-botones .boton-secundario { flex: 0 0 auto; width: auto; padding: 0 var(--space-4); }
+.fila-botones .boton-principal { white-space: nowrap; padding: 0 var(--space-3); }
 .asa { width: 40px; height: 4px; border-radius: var(--radius-pill); background: var(--linea); align-self: center; }
 .fila-titulo { display: flex; justify-content: space-between; align-items: center; }
 .lista-lugares { overflow-y: auto; display: flex; flex-direction: column; }
@@ -345,7 +406,7 @@ a.boton-principal, a.boton-secundario { text-decoration: none; }
 .pin-mapa { padding: 0; border: 0; background: none; cursor: pointer; line-height: 0; filter: drop-shadow(0 2px 2px rgba(34, 49, 58, 0.3)); }
 .marca-yo { width: 16px; height: 16px; border-radius: 50%; background: var(--azul-rio); border: 3px solid #FFFFFF; box-shadow: 0 0 0 6px rgba(27, 110, 138, 0.25); }
 .maplibregl-ctrl-attrib { font: 400 11px/14px var(--fuente-texto); }
-.pantalla-mapa .maplibregl-ctrl-bottom-right { bottom: auto; top: calc(var(--arriba) + 300px); }
+.pantalla-mapa .maplibregl-ctrl-bottom-right { bottom: auto; top: calc(var(--arriba) + 296px); }
 
 /* ---------- Ficha ---------- */
 .ficha-foto { position: relative; height: 264px; background: var(--azul-rio-claro); color: var(--azul-rio); }

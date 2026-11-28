@@ -68,6 +68,13 @@ export const es = {
   'mapa.noche': 'Noche',
   'mapa.sinResultados': 'No hay lugares con ese filtro.',
   'mapa.tuPosicion': 'Tu posición',
+  'mapa.verLista': 'Ver lista',
+  'mapa.ocultarLista': 'Ocultar lista',
+  'mapa.resumen': '{n} lugares a menos de {distancia}',
+  'mapa.resumenUno': '1 lugar a menos de {distancia}',
+  'mapa.capas': 'Capas del mapa',
+  'mapa.centrar': 'Ir a tu posición',
+  'mapa.quitarRuta': 'Quitar la ruta {nombre} del mapa',
 
   // Ficha
   'ficha.favorito': 'Guardar en favoritos',
@@ -149,6 +156,12 @@ export const es = {
   'ruta.mochila': 'Guarda la ruta en tu mochila',
   'ruta.irParada': 'Llévame a la parada {n}',
   'ruta.terminada': 'Ruta terminada',
+  'ruta.aPie': '{tiempo} a pie',
+  'ruta.enRecto': 'Sin conexión para calcular el camino a pie: de momento, las paradas van unidas en línea recta.',
+  'ruta.verParadas': 'Paradas',
+  'ruta.primera': 'Primera parada',
+  'ruta.siguienteCorta': 'Siguiente parada',
+  'ruta.verEnMapa': 'Ver en el mapa',
 
   // Sello
   'sello.checkin': 'Check-in con QR',

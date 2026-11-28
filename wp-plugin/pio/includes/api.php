@@ -196,8 +196,9 @@ function pio_api_categorias(): WP_REST_Response {
 	);
 }
 
-function pio_resumen_ruta( WP_Post $r ): array {
+function pio_resumen_ruta( WP_Post $r, ?array $trazado = null ): array {
 	$paradas = array_map( 'intval', (array) get_post_meta( $r->ID, 'paradas', true ) );
+	$trazado = $trazado ?? pio_trazado_ruta( $r->ID, false );
 	return array(
 		'id'          => $r->ID,
 		'nombre'      => get_the_title( $r ),
@@ -205,12 +206,15 @@ function pio_resumen_ruta( WP_Post $r ): array {
 		'color'       => get_post_meta( $r->ID, 'color', true ) ?: null,
 		'icono'       => get_post_meta( $r->ID, 'icono', true ) ?: null,
 		'num_paradas' => count( $paradas ),
+		// Recorrido a pie (D25): solo si ya está calculado; el listado no lo calcula
+		'distancia'   => $trazado['distancia'] ?? null,
+		'duracion'    => $trazado['duracion'] ?? null,
 	);
 }
 
 function pio_api_rutas(): WP_REST_Response {
 	$rutas = get_posts( array( 'post_type' => 'pio_ruta', 'post_status' => 'publish', 'posts_per_page' => 100 ) );
-	return rest_ensure_response( array_map( 'pio_resumen_ruta', $rutas ) );
+	return rest_ensure_response( array_map( fn( $r ) => pio_resumen_ruta( $r ), $rutas ) );
 }
 
 function pio_api_ruta( WP_REST_Request $req ) {
@@ -226,10 +230,14 @@ function pio_api_ruta( WP_REST_Request $req ) {
 			$paradas[] = pio_resumen_punto( $p );
 		}
 	}
+	$trazado = pio_trazado_ruta( $r->ID );
 	return rest_ensure_response(
-		pio_resumen_ruta( $r ) + array(
+		pio_resumen_ruta( $r, $trazado ) + array(
 			'premio'  => get_post_meta( $r->ID, 'premio', true ) ?: null,
 			'paradas' => $paradas,
+			// Recorrido a pie entre paradas: lista de [lng, lat] y metros de cada tramo (D25)
+			'trazado' => $trazado['coords'] ?? null,
+			'tramos'  => $trazado['tramos'] ?? null,
 		)
 	);
 }
@@ -259,3 +267,20 @@ function pio_api_qr( WP_REST_Request $req ) {
 
 	return rest_ensure_response( pio_resumen_punto( $punto ) + array( 'rutas' => $rutas ) );
 }
+
+/**
+ * CORS igual para todos en la API pública de Pío.
+ *
+ * WordPress solo envía Access-Control-Allow-Origin si la petición trae Origin. Con LiteSpeed Cache,
+ * la primera respuesta se guarda y se sirve a todos: si la primera llegó sin Origin (escritorio, curl,
+ * buscadores), la app recibía una copia sin la cabecera y no podía leerla (28/11).
+ * La API es pública y la app la pide sin cookies, así que se responde siempre con «*».
+ */
+function pio_cors_publico( $servida, $resultado, WP_REST_Request $req ) {
+	if ( 'GET' === $req->get_method() && str_starts_with( $req->get_route(), '/' . PIO_NS . '/' ) && ! str_starts_with( $req->get_route(), '/' . PIO_NS . '/verificacion' ) ) {
+		header_remove( 'Access-Control-Allow-Credentials' );
+		header( 'Access-Control-Allow-Origin: *' );
+	}
+	return $servida;
+}
+add_filter( 'rest_pre_serve_request', 'pio_cors_publico', 20, 3 );
