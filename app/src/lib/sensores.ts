@@ -30,7 +30,7 @@ export function usePosicion(activo: boolean) {
   return { posicion, error };
 }
 
-type OrientacionIOS = DeviceOrientationEvent & { webkitCompassHeading?: number };
+type OrientacionIOS = DeviceOrientationEvent & { webkitCompassHeading?: number; webkitCompassAccuracy?: number };
 type ConstructorConPermiso = typeof DeviceOrientationEvent & {
   requestPermission?: () => Promise<'granted' | 'denied'>;
 };
@@ -56,6 +56,8 @@ export function useBrujula(activo: boolean, suavizado = 0.2) {
   const [rumbo, setRumbo] = useState<number | null>(null);
   const [inclinacion, setInclinacion] = useState<number | null>(null);
   const [fuente, setFuente] = useState<string>('—');
+  // Precisión de la brújula en grados (solo iPhone). -1 = el sistema dice que no es fiable.
+  const [precision, setPrecision] = useState<number | null>(null);
   const ultimo = useRef<number | null>(null);
   const ultimaInclinacion = useRef<number | null>(null);
 
@@ -93,6 +95,7 @@ export function useBrujula(activo: boolean, suavizado = 0.2) {
       if (typeof ev.webkitCompassHeading === 'number') {
         setFuente('iOS webkitCompassHeading');
         aplicar(ev.webkitCompassHeading);
+        if (typeof ev.webkitCompassAccuracy === 'number') setPrecision(ev.webkitCompassAccuracy);
       }
       aplicarInclinacion(ev.beta);
     };
@@ -115,7 +118,7 @@ export function useBrujula(activo: boolean, suavizado = 0.2) {
     };
   }, [activo, suavizado]);
 
-  return { rumbo, inclinacion, fuente };
+  return { rumbo, inclinacion, fuente, precision };
 }
 
 /** Cámara trasera en un <video>. */

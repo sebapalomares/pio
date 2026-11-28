@@ -4,6 +4,7 @@ import type { Punto } from './tipos';
 import { useDatos } from './datos';
 import { pedirPermisoBrujula, useBrujula, usePosicion, type Posicion } from './sensores';
 import { useAlmacen } from './almacen';
+import { corregirRumbo, useCalibracion } from './calibracion';
 
 interface Sensores {
   /** Sensores en marcha (GPS siempre; brújula tras un toque del usuario en iPhone). */
@@ -12,7 +13,12 @@ interface Sensores {
   avisoBrujula: boolean;
   posicion: Posicion | null;
   errorGps: string | null;
+  /** Hacia dónde mira la cámara, con la calibración aplicada (0–360). */
   orientacion: number | null;
+  /** Lo que dice la brújula sin corregir (para calibrar). */
+  orientacionBruta: number | null;
+  /** Precisión de la brújula en grados (iPhone); -1 = no fiable; null = desconocida. */
+  precisionBrujula: number | null;
   inclinacion: number | null;
   fuenteBrujula: string;
   /** Lugares con coordenadas de la API (recolocados alrededor en modo prueba). */
@@ -40,7 +46,8 @@ export function ProveedorSensores({ children }: { children: ReactNode }) {
   const [brujulaActiva, setBrujulaActiva] = useState(false);
   const [avisoBrujula, setAvisoBrujula] = useState(false);
   const { posicion, error: errorGps } = usePosicion(true);
-  const { rumbo, inclinacion, fuente } = useBrujula(brujulaActiva);
+  const { rumbo, inclinacion, fuente, precision } = useBrujula(brujulaActiva);
+  const { desfase } = useCalibracion();
   const { alrededor } = useAlmacen();
   const reales = useDatos().datos?.puntos ?? SIN_PUNTOS;
 
@@ -71,7 +78,9 @@ export function ProveedorSensores({ children }: { children: ReactNode }) {
         avisoBrujula,
         posicion,
         errorGps,
-        orientacion: rumbo,
+        orientacion: corregirRumbo(rumbo, desfase),
+        orientacionBruta: rumbo,
+        precisionBrujula: precision,
         inclinacion,
         fuenteBrujula: fuente,
         puntos,

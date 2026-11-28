@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { anguloRelativo, distancia, formatearDistancia, rumbo } from '../../lib/geo';
 import { pedirPermisoBrujula, useBrujula, useCamara, usePosicion } from '../../lib/sensores';
 import { PUNTOS_CAZORLA, puntosAlrededor } from '../../data/puntos-prueba';
+import { calibracion, corregirRumbo, useCalibracion, useCampoVision } from '../../lib/calibracion';
+import { anguloElevacion, useElevaciones } from '../../lib/elevacion';
+import { CapaRA } from '../../components/CapaRA';
+import { t } from '../../i18n';
 
-// Campo de visión horizontal inicial de la cámara trasera en vertical (ajustable en el panel).
-const CAMPO_VISION_INICIAL = 50;
 const RADAR = 96; // diámetro del radar en px
 
 type Fuente = 'alrededor' | 'cazorla';
@@ -18,11 +21,14 @@ export default function PruebaRA() {
   const [avisoBrujula, setAvisoBrujula] = useState<string | null>(null);
   const [fuente, setFuente] = useState<Fuente>('alrededor');
   const [verDatos, setVerDatos] = useState(true);
-  const [campo, setCampo] = useState(CAMPO_VISION_INICIAL);
 
   const { posicion, error: errorGps } = usePosicion(activo);
-  const { rumbo: orientacion, inclinacion, fuente: fuenteBrujula } = useBrujula(activo);
+  const { rumbo: rumboBruto, inclinacion, fuente: fuenteBrujula, precision: precisionBrujula } = useBrujula(activo);
   const { video, error: errorCamara } = useCamara(activo);
+  // Calibración del móvil (D24): desfase de la brújula y ancho de la imagen
+  const cal = useCalibracion();
+  const { campo, medido } = useCampoVision(video);
+  const orientacion = corregirRumbo(rumboBruto, cal.desfase);
 
   const empezar = async () => {
     const ok = await pedirPermisoBrujula();
@@ -34,28 +40,25 @@ export default function PruebaRA() {
   const [origenDemo, setOrigenDemo] = useState<{ lat: number; lng: number } | null>(null);
   if (posicion && !origenDemo) setOrigenDemo({ lat: posicion.lat, lng: posicion.lng });
 
-  // Todos los puntos con distancia y ángulo respecto a donde miras (para el radar)
+  const lista = useMemo(
+    () => (fuente === 'cazorla' ? PUNTOS_CAZORLA : origenDemo ? puntosAlrededor(origenDemo) : []),
+    [fuente, origenDemo],
+  );
+  const versionAlturas = useElevaciones(lista, posicion);
+
+  // Todos los puntos con distancia, ángulo respecto a donde miras y elevación (relieve del terreno)
   const puntos = useMemo(() => {
     if (!posicion || orientacion === null) return [];
-    const lista = fuente === 'cazorla' ? PUNTOS_CAZORLA : origenDemo ? puntosAlrededor(origenDemo) : [];
     return lista.map((p) => {
       const d = distancia(posicion, p);
       const r = rumbo(posicion, p);
-      return { ...p, d, r, rel: anguloRelativo(r, orientacion) };
+      return { ...p, d, r, rel: anguloRelativo(r, orientacion), elev: anguloElevacion(posicion, p, d) };
     });
-  }, [posicion, orientacion, fuente, origenDemo]);
+    // versionAlturas: recalcular cuando llegan las altitudes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posicion, orientacion, lista, versionAlturas]);
 
-  // Los que caen dentro del campo de visión de la cámara, del más lejano al más cercano
-  const etiquetas = useMemo(
-    () => puntos.filter((p) => Math.abs(p.rel) <= campo / 2 + 5).sort((a, b) => b.d - a.d),
-    [puntos, campo],
-  );
-
-  // Campo de visión vertical a partir del horizontal y de la forma de la pantalla
-  const campoVertical =
-    (2 * Math.atan(Math.tan(((campo / 2) * Math.PI) / 180) * (window.innerHeight / window.innerWidth)) * 180) / Math.PI;
-  // Altura del horizonte en pantalla (%): sube y baja al inclinar el móvil
-  const horizonte = 50 + ((inclinacion ?? 0) / (campoVertical / 2)) * 50;
+  const enVista = puntos.filter((p) => Math.abs(p.rel) <= campo / 2);
   const alcanceRadar = Math.max(200, ...puntos.map((p) => p.d)) * 1.15;
 
   if (!activo) {
@@ -86,25 +89,14 @@ export default function PruebaRA() {
     <main className="ra" data-tema="oscuro">
       <video ref={video} className="ra-video" playsInline muted autoPlay />
 
-      <div className="ra-capa" aria-live="polite">
-        <div className="ra-horizonte" style={{ top: `${horizonte}%` }} />
-        {etiquetas.map((p, i) => {
-          const x = 50 + (p.rel / (campo / 2)) * 50;
-          // Etiquetas sobre el horizonte; si hay varias, se apilan hacia arriba
-          const y = `calc(${horizonte}% - ${64 + i * 60}px)`;
-          return (
-            <div key={p.id} className="etiqueta" style={{ left: `${x}%`, top: y }}>
-              <img src="/brand/pio-pin-azul.svg" alt="" />
-              <span className="etiqueta-texto">
-                <strong>{p.nombre}</strong>
-                <span>
-                  {formatearDistancia(p.d)} · {p.categoria}
-                </span>
-              </span>
-            </div>
-          );
-        })}
-      </div>
+      <CapaRA
+        items={puntos.map((p) => ({ ...p, subtitulo: `${formatearDistancia(p.d)} · ${p.categoria}` }))}
+        campo={campo}
+        inclinacion={inclinacion}
+        margenArriba={140}
+        margenAbajo={verDatos ? 380 : 120}
+        verHorizonte
+      />
 
       <div className="ra-barra">
         <img className="ra-logo" src="/brand/pio-logotipo-azul-claro.svg" alt="pio" />
@@ -159,12 +151,24 @@ export default function PruebaRA() {
             </div>
             <div>
               Brújula: {orientacion !== null ? `${Math.round(orientacion)}°` : 'sin datos'} · {fuenteBrujula}
+              {precisionBrujula !== null && (precisionBrujula < 0 ? ' · ±? (no fiable)' : ` · ±${Math.round(precisionBrujula)}°`)}
+            </div>
+            <div>
+              Calibración: {cal.desfase > 0 ? '+' : ''}
+              {Math.round(cal.desfase)}° · <Link to="/calibrar">{t('calibrar.enlace')}</Link>
             </div>
             <div>Inclinación: {inclinacion !== null ? `${Math.round(inclinacion)}°` : 'sin datos'}</div>
-            <div>Lugares a la vista: {etiquetas.length} de {puntos.length}</div>
+            <div>Lugares a la vista: {enVista.length} de {puntos.length}</div>
             <label className="ra-campo">
-              Campo de visión: {campo}°
-              <input type="range" min={30} max={80} step={1} value={campo} onChange={(e) => setCampo(Number(e.target.value))} />
+              Campo de visión: {Math.round(campo)}°{medido ? '' : ' (estimado)'}
+              <input
+                type="range"
+                min={15}
+                max={100}
+                step={1}
+                value={Math.round(campo)}
+                onChange={(e) => calibracion.ponerCampo(Number(e.target.value))}
+              />
             </label>
             {errorGps && <div className="error">GPS: {errorGps}</div>}
             {errorCamara && <div className="error">Cámara: {errorCamara}</div>}
