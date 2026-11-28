@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { t } from '../../i18n';
 import { useSensores } from '../../lib/contexto';
 import { useCamara } from '../../lib/sensores';
 import { formatearDistancia } from '../../lib/geo';
-import { usePuntosEnVista } from '../../lib/ra';
-import { useCampoVision } from '../../lib/calibracion';
+import { elegirCentrado, usePuntosEnVista } from '../../lib/ra';
+import { textoRadio, useCalibracion, useCampoVision } from '../../lib/calibracion';
+import { AjustesRA } from '../../components/AjustesRA';
 import { anguloElevacion, useElevaciones } from '../../lib/elevacion';
 import { CapaRA, type ItemRA } from '../../components/CapaRA';
 import { BarraNavegacion, FotoHueco, LogoPastilla, SelectorModo } from '../../components/Comunes';
@@ -16,17 +17,23 @@ import { Radar } from '../../components/Radar';
 export default function ExplorarRA() {
   const s = useSensores();
   const { video, error: errorCamara } = useCamara(true);
-  const puntos = usePuntosEnVista(s.puntos, s.posicion, s.orientacion);
+  const todos = usePuntosEnVista(s.puntos, s.posicion, s.orientacion);
+  const { radio, nombresHasta } = useCalibracion();
+  // Radio de acción (ajuste del usuario): más lejos no sale en la cámara ni en el radar
+  const puntos = useMemo(() => (radio === null ? todos : todos.filter((p) => p.d <= radio)), [todos, radio]);
   const [elegido, setElegido] = useState<string | null>(null);
+  const [verAjustes, setVerAjustes] = useState(false);
 
   const { campo } = useCampoVision(video);
   const versionAlturas = useElevaciones(s.puntos, s.posicion);
 
   const enVista = puntos.filter((p) => Math.abs(p.rel) <= campo / 2 + 5);
-  // La tarjeta muestra el lugar tocado o, si no, el que tienes más centrado en la cámara.
-  const centrado = enVista.reduce<(typeof enVista)[number] | null>((m, p) => (!m || Math.abs(p.rel) < Math.abs(m.rel) ? p : m), null);
-  // (el tocado deja de mandar cuando sale de la imagen)
-  const seleccionado = enVista.find((p) => p.id === elegido) ?? centrado;
+  // La tarjeta muestra el lugar tocado o, si no, el que tienes centrado (con histéresis, para
+  // que no cambie a cada temblor). El tocado deja de mandar cuando sale de la imagen.
+  const centradoAntes = useRef<string | null>(null);
+  const idCentrado = elegirCentrado(enVista, centradoAntes.current, campo);
+  centradoAntes.current = idCentrado;
+  const seleccionado = enVista.find((p) => p.id === elegido) ?? enVista.find((p) => p.id === idCentrado) ?? null;
 
   // Cada lugar con su ángulo sobre el horizonte (relieve del terreno), para la mira de RA.
   const items: ItemRA[] = useMemo(
@@ -58,6 +65,7 @@ export default function ExplorarRA() {
         onElegir={setElegido}
         margenArriba={130}
         margenAbajo={330}
+        nombresHasta={nombresHasta}
       />
 
       <header className="cabecera-flotante">
@@ -71,15 +79,17 @@ export default function ExplorarRA() {
           ? t('ra.gpsImpreciso', { m: Math.round(s.posicion.precision) })
           : s.modoAlrededor
             ? t('ra.demoAlrededor')
-            : t('ra.cercanos', { n: puntos.length })}
+            : radio === null
+              ? t('ra.cercanos', { n: puntos.length })
+              : t('ra.enRadio', { n: puntos.length, radio: textoRadio(radio) })}
       </div>
 
       <div className="radar-sitio" data-ra-obstaculo>
         <Radar puntos={puntos} orientacion={s.orientacion} campo={campo} />
-        <Link to="/calibrar" className="boton-calibrar" aria-label={t('calibrar.abrir')}>
-          <Icono nombre="brujula" tamano={18} />
-          {t('calibrar.boton')}
-        </Link>
+        <button type="button" className="boton-calibrar" aria-expanded={verAjustes} onClick={() => setVerAjustes((v) => !v)}>
+          <Icono nombre="filtro" tamano={18} />
+          {t('ajustes.boton')}
+        </button>
       </div>
 
       {!s.brujulaActiva && (
@@ -91,6 +101,11 @@ export default function ExplorarRA() {
         </div>
       )}
 
+      {verAjustes ? (
+        <div className="hoja-flotante">
+          <AjustesRA onCerrar={() => setVerAjustes(false)} />
+        </div>
+      ) : (
       <div className="hoja-flotante">
         {(errorCamara || s.errorGps || s.avisoBrujula || !s.posicion) && (
           <p className="texto-aviso">
@@ -129,6 +144,7 @@ export default function ExplorarRA() {
           s.posicion && <p className="texto-suave">{t('ra.toca')}</p>
         )}
       </div>
+      )}
 
       <BarraNavegacion />
     </main>

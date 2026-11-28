@@ -117,7 +117,7 @@ export default function Calibrar() {
     <main className="pantalla pantalla-camara" data-tema="oscuro">
       <video ref={video} className="camara-video" playsInline muted autoPlay />
 
-      {paso === 'comprobar' && <CapaRA items={items} campo={campo} inclinacion={s.inclinacion} margenArriba={110} margenAbajo={390} />}
+      {paso === 'comprobar' && <CapaRA items={items} campo={campo} inclinacion={s.inclinacion} margenArriba={200} margenAbajo={230} />}
       {(paso === 'centrar' || paso === 'campo') && (
         <div className={paso === 'centrar' ? 'calibrar-linea' : 'calibrar-linea derecha'} style={paso === 'campo' ? { left: `${LINEA_DERECHA * 100}%` } : undefined} aria-hidden="true">
           <span className="calibrar-mira" />
@@ -129,7 +129,31 @@ export default function Calibrar() {
         <span className="calibrar-titulo">{t('calibrar.titulo')}</span>
       </header>
 
-      <div className="hoja-flotante calibrar-hoja">
+      {/* Instrucciones arriba y en pequeño, para dejar ver el lugar en el centro de la imagen */}
+      {paso !== 'elegir' && (
+        <div className="calibrar-instruccion" role="status">
+          {paso === 'centrar' && ref && (
+            <>
+              <strong>{t('calibrar.centrar', { nombre: ref.nombre })}</strong>
+              <span>{t('calibrar.centrarTexto')}</span>
+            </>
+          )}
+          {paso === 'campo' && ref && (
+            <>
+              <strong>{t('calibrar.campo')}</strong>
+              <span>{t('calibrar.campoTexto', { nombre: ref.nombre })}</span>
+            </>
+          )}
+          {paso === 'comprobar' && (
+            <>
+              <strong>{t('calibrar.comprobar')}</strong>
+              <span>{fecha ? t('calibrar.ultima', { fecha, lugar: cal.referencia ?? '—' }) : t('calibrar.sinCalibrar')}</span>
+            </>
+          )}
+        </div>
+      )}
+
+      <div className={paso === 'elegir' ? 'hoja-flotante calibrar-hoja' : 'hoja-flotante calibrar-hoja compacta'}>
         {errorCamara && <p className="texto-aviso">{t('aviso.errorCamara', { error: errorCamara })}</p>}
         {!s.brujulaActiva && (
           <button type="button" className="boton-principal" onClick={() => void s.activarBrujula()}>
@@ -180,10 +204,6 @@ export default function Calibrar() {
 
         {paso === 'centrar' && ref && (
           <>
-            <div>
-              <h2 className="titulo-3">{t('calibrar.centrar', { nombre: ref.nombre })}</h2>
-              <p className="texto-suave">{t('calibrar.centrarTexto')}</p>
-            </div>
             {!ref.verificado && <p className="texto-aviso">{t('calibrar.aproximadaAviso')}</p>}
             <p className="texto-suave">
               {t('calibrar.lectura', {
@@ -206,10 +226,6 @@ export default function Calibrar() {
 
         {paso === 'campo' && ref && (
           <>
-            <div>
-              <h2 className="titulo-3">{t('calibrar.campo')}</h2>
-              <p className="texto-suave">{t('calibrar.campoTexto', { nombre: ref.nombre })}</p>
-            </div>
             {aviso && <p className="texto-aviso" role="alert">{aviso}</p>}
             <div className="fila-botones">
               <button type="button" className="boton-secundario" onClick={() => setPaso('comprobar')}>
@@ -225,7 +241,6 @@ export default function Calibrar() {
 
         {paso === 'comprobar' && (
           <>
-            <p className="texto-suave">{t('calibrar.comprobarCorto')}</p>
             <div className="calibrar-ajuste">
               <button type="button" className="boton-redondo borde" aria-label={t('calibrar.izquierda')} onClick={() => calibracion.ajustarDesfase(1)}>
                 <Icono nombre="atras" />
@@ -244,18 +259,14 @@ export default function Calibrar() {
                 <span aria-hidden="true">+</span>
               </button>
             </div>
-            <div className="calibrar-pie">
-              <span className="texto-suave">{fecha ? t('calibrar.ultima', { fecha, lugar: cal.referencia ?? '—' }) : t('calibrar.sinCalibrar')}</span>
-              <button type="button" className="boton-enlace" onClick={() => calibracion.reiniciar()}>
-                {t('calibrar.restablecer')}
-              </button>
-            </div>
             <div className="fila-botones">
               <button type="button" className="boton-secundario" onClick={() => setPaso('elegir')}>
                 {t('calibrar.repetir')}
               </button>
+              <button type="button" className="boton-secundario" onClick={() => calibracion.reiniciar()}>
+                {t('calibrar.restablecer')}
+              </button>
               <Link to="/explorar" className="boton-principal">
-                <Icono nombre="check" />
                 {t('calibrar.listo')}
               </Link>
             </div>

@@ -270,6 +270,8 @@ a.boton-principal, a.boton-secundario { text-decoration: none; }
 
 /* ---------- Mapa ---------- */
 .mapa-lienzo { position: absolute; inset: 0; }
+/* MapLibre pone .maplibregl-map { position: relative } y su CSS se carga después: sin esto el mapa mide 0 px de alto */
+.mapa-lienzo.maplibregl-map { position: absolute; inset: 0; }
 .campo-busqueda {
   min-height: var(--zona-tactil);
   display: flex;
@@ -660,3 +662,65 @@ a.boton-principal, a.boton-secundario { text-decoration: none; }
 .etiqueta-ra.compacta::after { content: ""; position: absolute; left: 0; right: 0; top: -5px; bottom: -5px; }
 /* «+2»: más lugares detrás de la misma mira */
 .etiqueta-mas { flex: none; padding: 0 6px; border-radius: var(--radius-pill); background: var(--azul-rio-claro); color: var(--azul-rio-hondo); font: 600 12px/20px var(--fuente-texto); }
+
+/* Lugares lejanos: solo el pin (D24, ajuste «Nombres hasta») */
+.ra-pin { fill: var(--azul-rio); stroke: #fff; stroke-width: 1.5; }
+.ra-pin-punto { fill: var(--amarillo-pico); }
+.ra-lineas .aprox .ra-pin { fill: #fff; stroke: var(--azul-rio); stroke-dasharray: 3 2; }
+.pin-ra {
+  position: absolute;
+  width: var(--zona-tactil);
+  height: var(--zona-tactil);
+  transform: translate(-50%, -75%);
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+.pin-ra:focus-visible { outline: 3px solid var(--amarillo-pico); }
+/* Sin animación CSS: la suavidad la da la brújula (ajuste «Respuesta»), y así etiqueta, línea y mira van juntas */
+.ra-capa .etiqueta-ra { transition: none; }
+
+/* ---------- Ajustes de la cámara RA (D24) ---------- */
+.ajustes-ra { display: flex; flex-direction: column; gap: var(--space-3); max-height: 58vh; overflow-y: auto; }
+.ajustes-ra-cabecera { display: flex; align-items: center; justify-content: space-between; }
+.ajustes-ra-cabecera .boton-redondo { width: var(--zona-tactil); height: var(--zona-tactil); background: var(--superficie); color: var(--tinta); }
+.ajustes-ra-grupo { margin: 0; padding: 0; border: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.ajustes-ra-grupo legend { padding: 0; margin-bottom: var(--space-1); font: var(--cuerpo-fuerte); color: var(--tinta); }
+.ajustes-ra-opciones { display: flex; gap: 4px; padding: 3px; border-radius: var(--radius-pill); background: var(--azul-rio-claro); }
+.ajustes-ra-opciones button {
+  flex: 1;
+  min-height: var(--zona-tactil);
+  padding: 0 4px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--tinta);
+  font: 600 14px/1 var(--fuente-texto);
+  cursor: pointer;
+}
+.ajustes-ra-opciones button[aria-pressed="true"] { background: var(--azul-rio); color: var(--sobre-azul); }
+.ajustes-ra-calibrar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.ajustes-ra-calibrar .boton-secundario { flex: none; }
+
+/* Calibrar: instrucciones arriba, pequeñas; hoja inferior mínima para ver el lugar */
+.calibrar-instruccion {
+  position: absolute;
+  top: calc(var(--arriba) + 60px);
+  left: var(--space-3);
+  right: var(--space-3);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--superficie) 88%, transparent);
+  color: var(--tinta);
+  box-shadow: var(--shadow-tarjeta);
+}
+.calibrar-instruccion strong { font: 600 14px/19px var(--fuente-texto); }
+.calibrar-instruccion span { font: 400 12px/16px var(--fuente-texto); color: var(--tinta-suave); }
+.calibrar-hoja.compacta { gap: var(--space-2); padding: var(--space-3); }
+.calibrar-hoja.compacta .fila-botones > * { min-width: 0; padding-left: var(--space-2); padding-right: var(--space-2); }
+.calibrar-mira { top: 50%; margin-top: -14px; }

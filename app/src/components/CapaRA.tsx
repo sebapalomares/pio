@@ -1,4 +1,6 @@
+import { useRef } from 'react';
 import { campoVertical } from '../lib/calibracion';
+import { elegirCentrado } from '../lib/ra';
 import { t } from '../i18n';
 
 /** Un lugar listo para pintar en la cámara. */
@@ -24,6 +26,8 @@ interface Props {
   margenAbajo?: number;
   /** Línea discontinua del horizonte (pantalla de prueba). */
   verHorizonte?: boolean;
+  /** Más lejos que esto (m), solo el pin, sin nombre (salvo el destacado). null = nombres en todos. */
+  nombresHasta?: number | null;
 }
 
 const ALTO_ETIQUETA = 52; // etiqueta completa (nombre + distancia): la del lugar destacado
@@ -58,7 +62,7 @@ const anchoEtiqueta = (p: ItemRA, compacta: boolean) =>
  * encima o debajo, su etiqueta; y una línea que los une.
  * El lugar que tienes en el centro (o el elegido) se resalta en amarillo.
  */
-export function CapaRA({ items, campo, inclinacion, elegido = null, onElegir, margenArriba = 150, margenAbajo = 300, verHorizonte = false }: Props) {
+export function CapaRA({ items, campo, inclinacion, elegido = null, onElegir, margenArriba = 150, margenAbajo = 300, verHorizonte = false, nombresHasta = null }: Props) {
   const W = window.innerWidth;
   const H = window.innerHeight;
   const medioV = campoVertical(campo, W, H) / 2;
@@ -66,8 +70,14 @@ export function CapaRA({ items, campo, inclinacion, elegido = null, onElegir, ma
 
   const visibles = items.filter((p) => Math.abs(p.rel) <= campo / 2 + 3);
   // El que está más centrado, si está cerca del centro, se considera «enfocado»
-  const centrado = visibles.reduce<ItemRA | null>((m, p) => (!m || Math.abs(p.rel) < Math.abs(m.rel) ? p : m), null);
-  const destacado = elegido && visibles.some((p) => p.id === elegido) ? elegido : centrado && Math.abs(centrado.rel) < campo * 0.15 ? centrado.id : null;
+  // Con histéresis: el destacado se mantiene mientras siga cerca del centro, para que no
+  // cambie a cada temblor de la brújula. Los ref guardan lo pintado en el fotograma anterior
+  // (destacado y sitio de cada etiqueta): se leen y escriben al pintar a propósito.
+  const anterior = useRef<string | null>(null);
+  const memoria = useRef(new Map<string, { dx: number; dy: number; debajo: boolean }>());
+  const centrado = elegirCentrado(visibles, anterior.current, campo);
+  const destacado = elegido && visibles.some((p) => p.id === elegido) ? elegido : centrado;
+  anterior.current = destacado;
 
   // Posición en pantalla de cada mira
   const todas = visibles.map((p) => ({
@@ -79,11 +89,11 @@ export function CapaRA({ items, campo, inclinacion, elegido = null, onElegir, ma
 
   // Lugares que caen casi en el mismo punto de la imagen: una sola mira (la del destacado o la
   // del más cercano) y su etiqueta indica cuántos más hay detrás («+2»).
-  const marcas: ((typeof todas)[number] & { mas: number })[] = [];
+  const marcas: ((typeof todas)[number] & { mas: number; lejano: boolean })[] = [];
   for (const m of [...todas].sort((a, b) => (a.id === destacado ? -1 : b.id === destacado ? 1 : a.d - b.d))) {
     const grupo = marcas.find((g) => Math.abs(g.x - m.x) < AGRUPAR && Math.abs(g.y - m.y) < AGRUPAR);
     if (grupo) grupo.mas += 1;
-    else marcas.push({ ...m, mas: 0 });
+    else marcas.push({ ...m, mas: 0, lejano: m.id !== destacado && nombresHasta !== null && m.d > nombresHasta });
   }
 
   // Colocación de etiquetas sin solapes: primero la destacada y luego de la más cercana a la más
@@ -92,10 +102,20 @@ export function CapaRA({ items, campo, inclinacion, elegido = null, onElegir, ma
   // Si no cabe, la mira se queda sin etiqueta (el lugar sigue en el radar).
   const ocupadas: Caja[] = obstaculos();
   const miras: Caja[] = marcas.map((m) => ({ x1: m.x - m.tam / 2, y1: m.y - m.tam / 2, x2: m.x + m.tam / 2, y2: m.y + m.tam / 2 }));
-  const orden = [...marcas].sort((a, b) => (a.id === destacado ? -1 : b.id === destacado ? 1 : a.d - b.d));
+  // Orden de reparto: el destacado; luego las etiquetas que ya estaban (conservan su sitio);
+  // al final las que acaban de entrar, en el hueco que quede. Así una nueva no empuja a las demás.
+  const yaEstaba = (id: string) => memoria.current.has(id);
+  const orden = [...marcas].sort((a, b) => {
+    if (a.id === destacado) return -1;
+    if (b.id === destacado) return 1;
+    if (yaEstaba(a.id) !== yaEstaba(b.id)) return yaEstaba(a.id) ? -1 : 1;
+    return a.d - b.d;
+  });
   const etiquetas = new Map<string, { xEtiqueta: number; arriba: number; debajo: boolean; alto: number; compacta: boolean }>();
 
+  const nuevaMemoria = new Map<string, { dx: number; dy: number; debajo: boolean }>();
   for (const m of orden) {
+    if (m.lejano) continue; // lejos: solo el pin
     const compacta = m.id !== destacado;
     const alto = compacta ? ALTO_COMPACTA : ALTO_ETIQUETA;
     const w = anchoEtiqueta(m, compacta) + (m.mas ? 30 : 0);
@@ -106,6 +126,14 @@ export function CapaRA({ items, campo, inclinacion, elegido = null, onElegir, ma
     if (maxY < minY) break;
 
     const huecos: { xEtiqueta: number; arriba: number; debajo: boolean }[] = [];
+    // Primero, el mismo sitio que tenía (respecto a su mira): así las etiquetas no saltan al girar
+    const previo = memoria.current.get(m.id);
+    if (previo) {
+      const arriba = m.y + previo.dy;
+      if (arriba >= minY && arriba <= maxY) {
+        huecos.push({ xEtiqueta: Math.min(maxX, Math.max(minX, m.x + previo.dx)), arriba, debajo: previo.debajo });
+      }
+    }
     for (let k = 0; k < FILAS; k++) {
       const paso = k * (alto + 6);
       const encima = m.y - m.tam / 2 - SEPARACION - alto - paso;
@@ -134,8 +162,10 @@ export function CapaRA({ items, campo, inclinacion, elegido = null, onElegir, ma
     if (!elegidoHueco) continue;
     ocupadas.push(caja(elegidoHueco));
     etiquetas.set(m.id, { ...elegidoHueco, alto, compacta });
+    nuevaMemoria.set(m.id, { dx: elegidoHueco.xEtiqueta - m.x, dy: elegidoHueco.arriba - m.y, debajo: elegidoHueco.debajo });
   }
 
+  memoria.current = nuevaMemoria;
   const colocados = [...marcas].sort((a, b) => b.d - a.d); // los lejanos se pintan primero, los cercanos encima
 
   return (
@@ -154,11 +184,25 @@ export function CapaRA({ items, campo, inclinacion, elegido = null, onElegir, ma
                   y2={e.debajo ? p.y + p.tam / 2 : p.y - p.tam / 2}
                 />
               )}
-              <Mira x={p.x} y={p.y} tam={p.tam} />
+              {p.lejano ? <PinLejano x={p.x} y={p.y} /> : <Mira x={p.x} y={p.y} tam={p.tam} />}
             </g>
           );
         })}
       </svg>
+
+      {onElegir &&
+        colocados
+          .filter((p) => p.lejano)
+          .map((p) => (
+            <button
+              key={`pin-${p.id}`}
+              type="button"
+              className="pin-ra"
+              style={{ left: p.x, top: p.y }}
+              aria-label={p.mas > 0 ? t('ra.masLugaresTexto', { nombre: p.nombre, n: p.mas }) : `${p.nombre} · ${p.subtitulo}`}
+              onClick={() => onElegir(p.id)}
+            />
+          ))}
 
       {colocados.map((p) => {
         const e = etiquetas.get(p.id);
@@ -205,6 +249,18 @@ function Mira({ x, y, tam }: { x: number; y: number; tam: number }) {
       <path className="ra-mira-sombra" d={d} />
       <path className="ra-mira" d={d} />
       <circle className="ra-mira-punto" cx={x} cy={y} r={3} />
+    </>
+  );
+}
+
+/** Lugar lejano: pin pequeño con la punta en el lugar, sin nombre. */
+function PinLejano({ x, y }: { x: number; y: number }) {
+  // Pin de Pío (D16) a 14 × 19 px, con la punta en (x, y)
+  const d = `M${x},${y} C${x - 4.2},${y - 5.6} ${x - 7},${y - 9} ${x - 7},${y - 12.4} A7 7 0 0 1 ${x + 7},${y - 12.4} C${x + 7},${y - 9} ${x + 4.2},${y - 5.6} ${x},${y} Z`;
+  return (
+    <>
+      <path className="ra-pin" d={d} />
+      <circle className="ra-pin-punto" cx={x} cy={y - 12.4} r={2.6} />
     </>
   );
 }

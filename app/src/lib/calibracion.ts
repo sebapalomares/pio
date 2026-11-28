@@ -1,4 +1,5 @@
 import { useEffect, useState, useSyncExternalStore, type RefObject } from 'react';
+import { t } from '../i18n';
 
 /**
  * Calibración de la RA guardada en el propio móvil (cada móvil tiene su brújula y su cámara).
@@ -13,10 +14,29 @@ export interface Calibracion {
   campo: number | null;
   referencia: string | null; // nombre del lugar usado para calibrar
   fecha: string | null; // ISO
+  /** Ajustes de la cámara que elige el usuario (también por móvil). */
+  radio: number | null; // metros; null = todos los lugares
+  nombresHasta: number | null; // metros; más lejos, solo el pin; null = nombres en todos
+  respuesta: Respuesta;
 }
 
+/** Cómo de rápido sigue la brújula al móvil: rápida (más nerviosa) o estable (más suave). */
+export type Respuesta = 'rapida' | 'normal' | 'estable';
+
+/** Suavizado de la brújula: cuánto de cada lectura nueva se aplica (0–1). Más bajo = más estable y más lento. */
+export const RESPUESTAS: Record<Respuesta, { suavizado: number }> = {
+  rapida: { suavizado: 0.4 },
+  normal: { suavizado: 0.2 },
+  estable: { suavizado: 0.08 },
+};
+
+/** Opciones que se ofrecen (metros; null = todos). */
+export const OPCIONES_RADIO: (number | null)[] = [500, 1000, 2000, 5000, null];
+export const OPCIONES_NOMBRES: (number | null)[] = [300, 600, 1000, null];
+
 const CLAVE = 'pio:calibracion:v1';
-const VACIA: Calibracion = { desfase: 0, campo: null, referencia: null, fecha: null };
+const AJUSTES_INICIALES = { radio: 2000, nombresHasta: 600, respuesta: 'normal' as Respuesta };
+const VACIA: Calibracion = { desfase: 0, campo: null, referencia: null, fecha: null, ...AJUSTES_INICIALES };
 
 /** Si no se puede medir ni estimar, el valor de siempre. */
 export const CAMPO_POR_DEFECTO = 50;
@@ -68,8 +88,18 @@ export const calibracion = {
   ponerCampo(campo: number | null) {
     guardar({ campo: campo === null ? null : limitar(campo, CAMPO_MIN, CAMPO_MAX), fecha: new Date().toISOString() });
   },
+  /** Vuelve a cero la calibración (no toca radio, nombres ni respuesta). */
   reiniciar() {
-    guardar(VACIA);
+    guardar({ desfase: 0, campo: null, referencia: null, fecha: null });
+  },
+  ponerRadio(radio: number | null) {
+    guardar({ radio });
+  },
+  ponerNombresHasta(nombresHasta: number | null) {
+    guardar({ nombresHasta });
+  },
+  ponerRespuesta(respuesta: Respuesta) {
+    guardar({ respuesta });
   },
 };
 
@@ -150,4 +180,10 @@ export function useCampoVision(video: RefObject<HTMLVideoElement | null>) {
 /** Campo de visión vertical a partir del horizontal y de la forma de la pantalla. */
 export function campoVertical(campoHorizontal: number, ancho = window.innerWidth, alto = window.innerHeight) {
   return (2 * Math.atan(Math.tan(((campoHorizontal / 2) * Math.PI) / 180) * (alto / ancho)) * 180) / Math.PI;
+}
+
+/** «500 m», «1 km», «2,5 km»… o «Todos» (null). */
+export function textoRadio(m: number | null) {
+  if (m === null) return t('ajustes.todos');
+  return m < 1000 ? `${m} m` : `${String(m / 1000).replace('.', ',')} km`;
 }

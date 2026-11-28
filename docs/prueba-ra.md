@@ -52,3 +52,10 @@ Cada lugar a la vista lleva un **recuadro (mira)** a su altura real —calculada
 - Cada etiqueta busca hueco encima o debajo de su mira (y algo a los lados) sin pisar otras etiquetas, otras miras, el radar, el botón «Calibrar» ni el aviso de arriba (`data-ra-obstaculo`). Si no cabe, la mira queda sin etiqueta y el lugar sigue en el radar.
 - Lugares que caen casi en el mismo punto de la imagen (a menos de 24 px) comparten mira; la etiqueta muestra «+2», «+3»…
 - **Calibrador:** ofrece también los lugares sin verificar (después de los verificados, marcados «ubicación aproximada»): a más de 500 m, 20 m de error son unos 2°. Útil, por ejemplo, para calibrar con la Ermita de San Isicio desde el casco.
+
+### Ajustes de la cámara, estabilidad, mapa y voz (28/11, tarde)
+- **Ajustes** (botón bajo el radar, se guardan en el móvil): **radio de acción** (500 m · 1 km · 2 km · 5 km · todos; por defecto 2 km), **nombres hasta** (300 m · 600 m · 1 km · todos; por defecto 600 m: más lejos solo el pin, que se puede tocar; el destacado siempre lleva nombre) y **respuesta de la brújula** (rápida · normal · estable: suavizado 0,4 · 0,2 · 0,08). Desde ahí se abre el calibrador.
+- **Estabilidad:** cada etiqueta conserva su sitio respecto a su mira mientras siga libre; el reparto empieza por el destacado y las que ya estaban, y las nuevas ocupan lo que quede. El destacado (y la tarjeta) no cambia hasta que otro esté claramente más centrado. Con ±3° de temblor simulado, los saltos de etiquetas bajan de 4 a 2 en un giro de 40°.
+- **Calibrador:** instrucciones en una franja pequeña arriba y hoja inferior mínima, para ver el lugar en el centro.
+- **Mapa:** se veía solo el fondo crema porque el CSS de MapLibre (cargado después) dejaba el contenedor con 0 px de alto. Corregido (`.mapa-lienzo.maplibregl-map`).
+- **Lectura en voz alta:** elige la mejor voz en español del móvil (premium/mejorada > Google > resto; nunca las voces Eloquence de iOS), lee frase a frase con pausas y a ritmo 0,95.
